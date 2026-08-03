@@ -1,0 +1,264 @@
+/* ============================================
+   paper-reader-assistant · 暗色模式样式
+   集成方法：在 index.html 的 <head> 中添加
+   <link rel="stylesheet" href="darkmode.css">
+   ============================================ */
+
+/* 跟随系统暗色模式自动切换 */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #14141f;
+    --card: #1e1e2e;
+    --ink: #e0dce8;
+    --muted: #8888a0;
+    --line: #2e2e44;
+    --accent: #a78bfa;
+    --accent2: #2dd4bf;
+  }
+
+  body {
+    background: linear-gradient(135deg, #1a1a2e, #14141f 45%);
+    color: var(--ink);
+  }
+
+  .card {
+    background: var(--card);
+    border-color: var(--line);
+    box-shadow: 0 14px 45px rgba(0, 0, 0, 0.3);
+  }
+
+  input, textarea, select {
+    background: #252537 !important;
+    color: var(--ink) !important;
+    border-color: #3a3a52 !important;
+  }
+
+  input:focus, textarea:focus, select:focus {
+    outline-color: var(--accent);
+    border-color: var(--accent) !important;
+  }
+
+  legend {
+    border-bottom-color: var(--line);
+  }
+
+  th {
+    background: #2a2340;
+    color: #c4b8e0;
+  }
+
+  td {
+    border-color: var(--line);
+  }
+
+  .secondary {
+    background: #1a3329;
+    color: var(--accent2);
+  }
+
+  .guide-link {
+    background: #2a1f3d;
+    color: var(--accent);
+  }
+
+  .danger {
+    background: #3d1a1a;
+    color: #f87171;
+  }
+
+  .zotero-item {
+    background: #252537;
+    border-color: var(--line);
+  }
+
+  .zotero-item:hover {
+    border-color: var(--accent);
+    background: #2a2540;
+  }
+
+  .ai-file {
+    background: #252537;
+    color: #b0a0d0;
+  }
+
+  .ai-mode {
+    background: #2a1f3d;
+    color: #a090c0;
+  }
+
+  .ai-mode.active {
+    background: var(--accent);
+    color: #fff;
+  }
+
+  .local-box {
+    border-color: #3a3a52;
+    background: #1e1e2e;
+  }
+
+  .model-runtime {
+    background: #252537;
+  }
+
+  .save-key-row {
+    border-color: #3a3a52;
+    background: #1e1e2e;
+  }
+
+  .innovation-list .innovation-row button {
+    background: #3d1a1a;
+  }
+
+  .add-innovation {
+    background: #4a3a6a !important;
+  }
+
+  /* 语言切换夜间样式默认应用 */
+  .language-switch {
+    background: linear-gradient(90deg, #22284f, #343061);
+    border-color: #504c82;
+    color: #eef0ff;
+  }
+
+  /* 使用说明暗色 */
+  .hero, .chapter {
+    background: var(--card);
+    border-color: var(--line);
+  }
+
+  summary {
+    color: var(--accent);
+  }
+
+  .callout {
+    background: #1e1e2e;
+  }
+}
+
+/* 手动暗色模式（通过 body.dark 类切换） */
+body.dark {
+  --bg: #14141f;
+  --card: #1e1e2e;
+  --ink: #e0dce8;
+  --muted: #8888a0;
+  --line: #2e2e44;
+  --accent: #a78bfa;
+  --accent2: #2dd4bf;
+  background: linear-gradient(135deg, #1a1a2e, #14141f 45%);
+  color: var(--ink);
+}
+
+body.dark .card {
+  background: var(--card);
+  border-color: var(--line);
+  box-shadow: 0 14px 45px rgba(0, 0, 0, 0.3);
+}
+
+body.dark input,
+body.dark textarea,
+body.dark select {
+  background: #252537;
+  color: var(--ink);
+  border-color: #3a3a52;
+}
+
+body.dark th {
+  background: #2a2340;
+  color: #c4b8e0;
+}
+
+body.dark td {
+  border-color: var(--line);
+}
+
+body.dark .zotero-item {
+  background: #252537;
+  border-color: var(--line);
+}
+
+body.dark .zotero-item:hover {
+  border-color: var(--accent);
+  background: #2a2540;
+}
+
+body.dark .ai-mode {
+  background: #2a1f3d;
+  color: #a090c0;
+}
+
+body.dark .ai-mode.active {
+  background: var(--accent);
+  color: #fff;
+}
+
+body.dark .model-runtime {
+  background: #252537;
+}
+
+body.dark .local-box {
+  border-color: #3a3a52;
+  background: #1e1e2e;
+}
+
+body.dark .save-key-row {
+  border-color: #3a3a52;
+  background: #1e1e2e;
+}
+
+body.dark legend {
+  border-bottom-color: var(--line);
+}
+
+body.dark .secondary {
+  background: #1a3329;
+  color: var(--accent2);
+}
+
+body.dark .guide-link {
+  background: #2a1f3d;
+  color: var(--accent);
+}
+
+body.dark .danger {
+  background: #3d1a1a;
+  color: #f87171;
+}
+
+body.dark .ai-file {
+  background: #252537;
+  color: #b0a0d0;
+}
+
+/* 暗色模式切换按钮 */
+#theme-toggle {
+  position: fixed;
+  z-index: 1000;
+  right: 14px;
+  top: 60px;
+  width: 42px;
+  height: 42px;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: var(--card);
+  color: var(--ink);
+  font-size: 20px;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  transition: transform 0.2s, background 0.3s;
+  display: grid;
+  place-items: center;
+}
+
+#theme-toggle:hover {
+  transform: scale(1.1);
+}
+
+@media (max-width: 700px) {
+  #theme-toggle {
+    top: 56px;
+    right: 10px;
+    width: 36px;
+    height: 36px;
+    font-size: 16px;
+  }
+}
