@@ -1,0 +1,229 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>paper-reader-assistant · 完整使用说明</title>
+  <style>
+    :root{--ink:#25232a;--muted:#6d6873;--paper:#fffdf9;--purple:#7150a2;--purple2:#a888cf;--line:#ddd5e6;--sea:#def2ee;--accent:#216d62;--warn:#9a5b2e}
+    *{box-sizing:border-box}html{scroll-behavior:smooth;scroll-padding-top:20px}
+    body{margin:0;color:var(--ink);background:radial-gradient(circle at 85% 10%,#eee4f7 0,transparent 28%),linear-gradient(145deg,#e5f2ee,#f5f0e9 48%,#eee7f4);font:16px/1.72 system-ui,"Microsoft YaHei",sans-serif}
+    a{color:var(--purple)}code{background:#f0ebf5;border-radius:5px;padding:2px 6px}kbd{border:1px solid #b8b1bf;border-bottom-width:2px;border-radius:5px;background:white;padding:1px 6px}
+    #life-canvas{position:fixed;inset:0;width:100%;height:100%;z-index:60;pointer-events:none}
+    .layout{width:min(1480px,calc(100% - 28px));margin:26px auto 80px;display:grid;grid-template-columns:290px minmax(0,1fr);gap:24px;position:relative;z-index:1}
+    nav{position:sticky;top:18px;max-height:calc(100vh - 36px);overflow:auto;background:#ffffffdb;backdrop-filter:blur(10px);border:1px solid var(--line);border-radius:18px;padding:20px;box-shadow:0 12px 36px #27362e14}
+    nav h2{margin:0 0 12px;color:var(--purple);font-size:20px}nav ol{margin:0;padding-left:24px}nav li{margin:7px 0}nav a{text-decoration:none;color:#4d4653}nav a:hover{color:var(--purple);text-decoration:underline}
+    .content{min-width:0}.hero,.chapter{background:var(--paper);border:1px solid var(--line);border-radius:18px;box-shadow:0 14px 44px #27362e13;margin-bottom:18px}
+    .hero{padding:clamp(24px,5vw,52px);overflow:hidden;position:relative}.hero:after{content:"";position:absolute;width:260px;height:260px;border-radius:50%;right:-90px;top:-110px;background:#8d68bd18}
+    h1{font:750 clamp(32px,5vw,58px)/1.13 Georgia,"Microsoft YaHei",serif;color:var(--purple);margin:0 0 12px}.lead{font-size:18px;color:var(--muted);max-width:820px}.badges{display:flex;gap:8px;flex-wrap:wrap}.badge{background:#eee7f6;color:#614586;border-radius:999px;padding:5px 11px;font-size:13px;font-weight:700}
+    details.chapter{overflow:hidden}summary{cursor:pointer;list-style:none;padding:20px 26px;color:var(--purple);font-size:23px;font-weight:800;border-bottom:1px solid transparent;display:flex;align-items:center;gap:11px}summary::-webkit-details-marker{display:none}summary:before{content:"＋";width:28px;height:28px;border-radius:50%;display:grid;place-items:center;background:#eee7f6;font-size:18px}details[open]>summary{border-bottom-color:var(--line)}details[open]>summary:before{content:"−"}.chapter-body{padding:22px 28px 30px}
+    h3{color:#5d4678;margin-top:30px}.callout{border-left:5px solid var(--purple2);background:#f7f3fa;padding:14px 17px;border-radius:8px;margin:15px 0}.callout.info{border-color:#47978a;background:#eef8f5}.callout.warn{border-color:#d28a4d;background:#fff6e8}.callout.danger{border-color:#b8515d;background:#fff0f1}
+    table{width:100%;border-collapse:collapse;margin:14px 0 22px;display:table}th,td{border:1px solid var(--line);padding:10px 12px;text-align:left;vertical-align:top}th{background:#f0eaf6;color:#573e74}.table-wrap{overflow:auto}.flow{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:16px 0}.flow span{padding:9px 13px;border-radius:9px;background:#edf6f3;border:1px solid #cfe3dc}.flow b{color:var(--purple)}
+    .checklist{padding-left:0;list-style:none}.checklist li{margin:8px 0;padding-left:28px;position:relative}.checklist li:before{content:"✓";position:absolute;left:0;color:var(--accent);font-weight:900}.two{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}.mini{border:1px solid var(--line);border-radius:12px;padding:15px;background:#fff}.mini h3{margin:0 0 7px}
+    .top{position:fixed;right:16px;bottom:16px;z-index:70;width:44px;height:44px;border:0;border-radius:50%;background:var(--purple);color:white;font-size:20px;cursor:pointer;box-shadow:0 8px 22px #38224f66}.ripple{position:fixed;z-index:59;width:18px;height:18px;border:2px solid #7250a8;border-radius:50%;pointer-events:none;transform:translate(-50%,-50%);animation:ripple .75s ease-out forwards}@keyframes ripple{to{width:130px;height:130px;opacity:0;border-width:1px}}
+    .guide-language{position:fixed;right:16px;top:16px;z-index:70;border:1px solid #d7c9a9;border-radius:999px;padding:10px 16px;background:linear-gradient(90deg,#ffeeb1,#fff7dd);color:#473b28;box-shadow:0 7px 22px #4939162b;font-weight:800;cursor:pointer}.guide-language.night{background:linear-gradient(90deg,#22284f,#343061);border-color:#504c82;color:#eef0ff}
+    footer{text-align:center;color:var(--muted);padding:30px}
+    @media(max-width:950px){.layout{grid-template-columns:1fr}nav{position:relative;top:0;max-height:none}.two{grid-template-columns:1fr}}
+    @media(max-width:650px){.layout{width:min(100% - 16px,1480px);margin-top:8px}.chapter-body{padding:18px}summary{padding:17px;font-size:20px}table{min-width:720px}.hero{padding:26px}}
+    @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}#life-canvas{display:none}.ripple{display:none}}
+  </style>
+</head>
+<body>
+<canvas id="life-canvas" aria-hidden="true"></canvas>
+<button class="guide-language" id="guide-language" type="button">English · ★</button>
+<div class="layout" id="top">
+  <nav aria-label="目录">
+    <h2>目录 · 点击跳转</h2>
+    <ol>
+      <li><a href="#overview">系统概览</a></li>
+      <li><a href="#start">启动与界面</a></li>
+      <li><a href="#sources">Zotero 与本地文档</a></li>
+      <li><a href="#form">填写、清空与评分</a></li>
+      <li><a href="#obsidian">Obsidian 输出</a></li>
+      <li><a href="#cloud-ai">云端 AI 与 API Key</a></li>
+      <li><a href="#local-ai">Ollama 与本地模型</a></li>
+      <li><a href="#model-life">模型、上下文与数据生命周期</a></li>
+      <li><a href="#closing">关闭行为详解</a></li>
+      <li><a href="#privacy">文件、配置与隐私</a></li>
+      <li><a href="#trouble">常见问题排查</a></li>
+      <li><a href="#workflow">推荐工作流</a></li>
+    </ol>
+    <div class="callout info">所有章节标题均可点击收缩或展开。目录跳转时会自动展开目标章节。</div>
+  </nav>
+
+  <main class="content">
+    <header class="hero">
+      <h1>paper-reader-assistant<br>完整使用说明</h1>
+      <p class="lead">面向 Zotero、Obsidian、PDF、本地文档、云端 AI 与 Ollama 本地模型的一体化论文阅读记录工具。本文详细说明每个按钮、数据保存位置、模型内存行为与页面关闭链路。</p>
+      <div class="badges"><span class="badge">版本目录：paper-reader-assistant</span><span class="badge">助手端口：8774</span><span class="badge">独立 Ollama 端口：11436</span><span class="badge">模型目录由用户选择</span></div>
+    </header>
+
+    <details class="chapter" id="overview" open><summary>1. 系统概览</summary><div class="chapter-body">
+      <p>paper-reader-assistant不是一个单独打开的静态 HTML 文件。双击启动器后，Python 在本机启动一个只监听 <code>127.0.0.1</code> 的小型服务，再由浏览器显示界面。浏览器负责交互，Python 负责读取 Zotero、选择本地文件、调用模型和写入 Markdown。</p>
+      <div class="flow"><span>双击 PaperReader.cmd</span><b>→</b><span>pythonw.exe 后台运行</span><b>→</b><span>打开本地网页</span><b>→</b><span>填写或 AI 分析</span><b>→</b><span>生成 Obsidian 笔记</span></div>
+      <div class="callout info"><strong>为什么看不到 Python 黑窗口？</strong> 启动器优先使用 <code>pythonw.exe</code>，因此后台运行时不会出现命令行窗口。这是预期行为。</div>
+      <ul class="checklist"><li>不需要 Flask。</li><li>Zotero 数据读取可离线完成。</li><li>本地模型分析可完全离线。</li><li>云端 AI 需要网络、API Key，并可能产生费用。</li><li>Obsidian 输出是普通 Markdown，可长期迁移。</li></ul>
+    </div></details>
+
+    <details class="chapter" id="start" open><summary>2. 启动与界面</summary><div class="chapter-body">
+      <h3>启动</h3><ol><li>双击 <code>PaperReader.cmd</code>。</li><li>程序使用可用的 Python 运行时启动。</li><li>默认浏览器打开 <code>http://127.0.0.1:8774</code>。</li><li>若端口已有旧进程，应该先关闭旧助手，再重新启动。</li></ol>
+      <h3>界面区域</h3><div class="two"><div class="mini"><h3>左侧/主区域</h3><p>论文基础信息、研究问题、方法、创新点、结果、局限、研究启发和星级评价。</p></div><div class="mini"><h3>右侧 Zotero 栏</h3><p>读取本机 Zotero 主文献，支持搜索、刷新、回填和折叠为可拖动的 Z 球。</p></div><div class="mini"><h3>AI 球与 AI 面板</h3><p>AI 球可拖动并靠边；展开后可拖动面板标题栏，桌面端还可从右下角调整面板大小。二者都会记住位置。</p></div><div class="mini"><h3>右上角语言条与红色 ×</h3><p>语言条在中文太阳与英文星星模式之间切换；红色 × 全局关闭模型服务、Python 后台和当前助手页面。</p></div></div>
+      <h3>中英语言系统</h3><p>默认中文。语言条下方用另一种语言提示切换方向；中文显示 Q 版太阳，英文显示 Q 版星星，日夜过渡只作用于条状控件。选择会保存在浏览器本地。切换界面不会清空或翻译已有表单内容；之后发起的 AI 分析默认使用当前界面语言填入空字段。</p>
+      <p>窗口变窄时 Zotero 面板自动收为圆形悬浮球。悬浮球可拖动，松开后自动靠边，避免遮挡表单。Zotero 面板和悬浮球始终高于普通表单；右上角语言/关闭控件位于 Zotero 之上、AI 面板之下；AI 面板和 AI 球位于最上方。窄窗口下 Zotero 面板会下移并自适应可用高度，避免收起按钮与全局关闭按钮重叠。窗口缩放后，AI 球与面板会自动限制回当前可视区域。</p>
+    </div></details>
+
+    <details class="chapter" id="sources"><summary>3. Zotero 与本地文档读取</summary><div class="chapter-body">
+      <h3>Zotero 读取</h3><p>程序以只读方式访问用户目录下的 <code>Zotero/zotero.sqlite</code>，不会修改数据库。Zotero 打开并锁定数据库时，程序使用不可变只读连接读取。</p>
+      <ul><li>读取题目、作者、期刊/会议、年份、标签和所属分类。</li><li>过滤附件、笔记、批注和回收站项目，只显示主文献。</li><li>点击文献后回填基础字段，并通过 <code>zotero://</code> 定位 Zotero 条目。</li><li>若检测到已下载 PDF，同时记录其路径供 AI 阅读。</li><li>“研究方向”不是 Zotero 的统一标准字段，因此不强制从 Zotero 回填。</li></ul>
+      <h3>读取本地文档</h3><p>支持 PDF、DOCX、Markdown 和 TXT。PDF/DOCX 优先读取文件内嵌的题目、作者、年份与主题；缺少题目时使用文件名，不联网猜测缺失信息。</p>
+      <div class="callout warn">读取本地文档只导入当前表单，不会自动把文件写进 Zotero 数据库。直接写 Zotero SQLite 可能损坏文献库，因此程序坚持只读。</div>
+      <h3>PDF 正文提取</h3><p>Zotero PDF 优先使用同目录的 <code>.zotero-ft-cache</code>，速度快且离线。其他 PDF 尝试使用 <code>pypdf</code>。扫描件若没有文字层，需要 OCR，当前版本不会凭空识别图片文字。</p>
+    </div></details>
+
+    <details class="chapter" id="form"><summary>4. 填写、创新点、清空与星级</summary><div class="chapter-body">
+      <h3>表单内容</h3><p>包含基本信息、研究背景、研究缺口、数据来源、技术路线、核心方法、实验指标、主要结论、论文不足、可借鉴方法、未来方向和一句话总结。</p>
+      <h3>动态创新点</h3><p>默认显示两个创新点。点击“添加创新点”可继续增加；每项都可单独删除。生成 Markdown 时会按实际数量编号，不再限制为两个。</p>
+      <h3>星级评价</h3><p>创新性、工程价值和相关性初始都是“未评价”。可人工选择一至五星，也可由 AI 自动填写。相关性会参考表单中的研究方向和标签；没有研究背景时应保持未评价。</p>
+      <h3>AI 不覆盖规则</h3><p>AI 只填当前为空的输入框、空白创新点和“未评价”的星级。已经人工填写的内容和已经选择的星级不会被覆盖。</p>
+      <h3>一键清空</h3><p>清除全部表单内容，创新点恢复为两个空项，三个评分恢复“未评价”，当前 AI 文档路径也会清除。Obsidian 中已经生成的笔记不受影响。</p>
+    </div></details>
+
+    <details class="chapter" id="obsidian"><summary>5. Obsidian 目录与输出格式</summary><div class="chapter-body">
+      <h3>选择目录</h3><p>首次提供一个默认论文目录，也可点击“选择 Obsidian 目录”切换到其他仓库或文件夹。最近一次选择写入 <code>config.json</code>，下次自动沿用。</p>
+      <h3>文件名</h3><p>格式为 <code>YYYY-MM-DD_论文标题.md</code>。Windows 非法字符自动替换。同名文件不会覆盖，而是追加 <code>_2</code>、<code>_3</code>。</p>
+      <h3>笔记结构</h3><ul><li>YAML：题目、作者、期刊、年份、标签和日期。</li><li>紫色章节标题，保持克制。</li><li>正文使用 Obsidian 原生 callout 框，无需额外主题。</li><li>“1. 基本信息”是独立 Markdown 标题，信息框位于标题下方。</li><li>评分以表格形式写入；未评分时显示“未评价”。</li></ul>
+      <div class="callout info">网页底部的“论文阅读时间指导”只用于阅读参考，不会写入 Markdown。</div>
+    </div></details>
+
+    <details class="chapter" id="cloud-ai"><summary>6. 云端 AI、提供商与 API Key</summary><div class="chapter-body">
+      <h3>支持的接口</h3><ul><li>OpenAI / ChatGPT API：默认云端接口，默认模型 <code>chat-latest</code>。</li><li>DeepSeek 官方 API。</li><li>豆包 / 火山方舟官方 API。</li><li>自定义 OpenAI Chat Completions 兼容接口。</li></ul>
+      <h3>API Key 生命周期与可选保存</h3><p>默认不保存：在当前网页打开期间输入一次，可连续分析多篇论文；刷新或关闭后清除。若勾选“保存此接口的 API Key”再分析，程序会用 Windows DPAPI 按当前登录用户加密后写入 <code>config.json</code>，下次选择同一提供商时自动载入。其他 Windows 用户无法直接解密。取消勾选并执行分析，会删除该提供商已保存的 Key。</p>
+      <div class="callout warn"><strong>保存仍需谨慎。</strong> 加密能避免配置文件出现明文，但无法抵御已经控制当前 Windows 账户的恶意程序。共享电脑、公共电脑和高保密项目建议保持不勾选。</div>
+      <div class="callout warn"><strong>ChatGPT Plus/Pro 订阅不等于 OpenAI API 额度。</strong> 云端 API 通常需要单独创建 API Key 并按量计费。</div>
+      <h3>上传什么</h3><p>程序提取论文文字并发送给所选云端服务商，不直接上传整个 Zotero 数据库。长文档会保留首尾并截断中间内容以控制上下文和费用。使用前应确认论文授权、保密要求和服务商隐私条款。</p>
+      <h3>固定输出与语言</h3><p>模型被要求只返回固定 JSON，包括研究方向、背景、问题、方法、创新点、结果、局限、启发、标签和三个星级。“AI 填空语言”可选“跟随当前界面（默认）”、中文或 English。因此中文界面也能单独要求英文结果，反之亦然。无证据的信息应返回空字符串，不能编造。</p>
+    </div></details>
+
+    <details class="chapter" id="local-ai"><summary>7. Ollama 与本地模型管理</summary><div class="chapter-body">
+      <h3>Ollama 是什么</h3><p>Ollama 是本地大语言模型运行器，负责下载、保存、加载模型并提供本机 API。论文内容在电脑本地处理，不发送给 OpenAI、DeepSeek 或豆包。</p>
+      <h3>运行时与模型文件分离</h3><p>可正常安装 Ollama，也可将完整 Windows 独立运行时放入 <code>runtime</code> 文件夹。模型目录不固定在程序内部：首次使用必须自行选择磁盘和文件夹，适合复制给其他人使用。</p>
+      <h3>独立服务</h3><p>本程序在 <code>127.0.0.1:11436</code> 启动独立 Ollama 服务，并通过 <code>OLLAMA_MODELS</code> 指向用户选择的目录，不干扰系统默认的 11434 服务及旧版 11435 服务。</p>
+      <h3>模型下载</h3><p>模型管理页提供 Qwen2.5、Llama 3.x 和 DeepSeek-R1 的多种大小。下载在后台执行，完成后自动切换本地模型分析页面。模型可达数十 GB，应确保磁盘空间和网络稳定。</p>
+      <h3>已有模型</h3><p>选择的已有目录应是 Ollama 模型库，通常包含 <code>manifests</code> 和 <code>blobs</code>。单独的 GGUF 文件不能直接作为 Ollama 模型库，需先用 Modelfile 注册。</p>
+      <div class="table-wrap"><table><thead><tr><th>规模</th><th>典型下载量</th><th>最低建议内存</th><th>使用感受</th></tr></thead><tbody><tr><td>1.5B–3B</td><td>约 1–2 GB</td><td>8 GB</td><td>速度快，适合提取和简单摘要。</td></tr><tr><td>7B–8B</td><td>约 4.7–5 GB</td><td>16 GB</td><td>入门论文总结；CPU 可运行但较慢。</td></tr><tr><td>14B</td><td>约 9 GB</td><td>24 GB</td><td>科研分析质量更好，建议 10–12 GB 显存。</td></tr><tr><td>32B</td><td>约 20 GB</td><td>48 GB</td><td>推理更强，建议 20–24 GB 显存。</td></tr></tbody></table></div>
+      <p class="callout warn">配置是常见量化模型的经验建议。上下文越长，内存占用越高；没有独显也能 CPU 推理，但大型模型可能非常慢。</p>
+    </div></details>
+
+    <details class="chapter" id="model-life" open><summary>8. 模型、上下文与数据生命周期</summary><div class="chapter-body">
+      <h3>一篇论文是否需要上下文？</h3><p>需要。程序在单次请求中提供当前论文正文、固定分析格式，以及当前研究方向/标签。模型据此完成这一篇论文的阅读分析。</p>
+      <h3>论文之间是否继承上下文？</h3><p>不继承。每篇论文都是独立、非状态请求。上一篇论文的正文、推理过程和回答不会自动传给下一篇，避免文献之间相互污染。</p>
+      <h3>模型何时进入内存？</h3><p>第一次本地分析时，Ollama 将所选模型从磁盘加载到内存或显存。加载速度取决于模型大小、磁盘和硬件。</p>
+      <h3>模型何时退出内存？</h3><p>程序启动独立 Ollama 时设置 <code>OLLAMA_KEEP_ALIVE=-1</code>，所以模型默认持续驻留，便于连续分析。以下操作会释放：</p>
+      <ul><li>AI 本地模型区点击“关闭模型并释放内存”：只卸载当前模型。</li><li>页面右上角红色 <code>×</code>：关闭整个助手和独立 Ollama 服务。</li><li>正常关闭助手页面并确认离开：关闭后台和独立 Ollama 服务。</li><li>结束 Python 助手进程：服务进入清理阶段并终止其管理的 Ollama 进程。</li></ul>
+      <h3>释放是否删除模型？</h3><p>不会。释放只清理 RAM/VRAM。模型权重仍保留在用户选择的目录，下次分析只需重新加载，无需下载。</p>
+      <h3>论文数据是否保存？</h3><p>程序不建立 AI 聊天历史库。提取正文在请求期间存在于内存；只有用户点击“生成 Obsidian 笔记”后，结构化结果才保存为 Markdown。配置文件保存目录、所选本地模型名称，以及用户主动勾选后生成的 API Key 加密密文。</p>
+    </div></details>
+
+    <details class="chapter" id="closing" open><summary>9. 关闭行为详解（重点）</summary><div class="chapter-body">
+      <div class="callout info"><strong>结论：</strong>正常关闭主助手 HTML 页面并确认离开，会通知 Python 后台关闭；后台退出时会终止它启动的 Ollama 服务。模型文件不会删除。</div>
+      <h3>A. 直接关闭浏览器标签页或窗口</h3><ol><li>页面的 <code>beforeunload</code> 事件触发。</li><li>浏览器显示自己的“离开网站”确认提示。出于安全限制，网页不能自定义该提示文字。</li><li>选择“取消”：页面不关闭，后台和模型继续运行。</li><li>选择“离开/确认”：浏览器开始关闭页面，随后触发 <code>pagehide</code>。</li><li><code>pagehide</code> 使用 <code>navigator.sendBeacon('/api/shutdown')</code>，即使页面正在卸载也尽量可靠地发送关闭通知。</li><li>Python 收到请求，调用 HTTP 服务器的 <code>shutdown()</code>。</li><li><code>serve_forever()</code> 返回，进入 <code>finally</code>：关闭服务器，并终止本程序启动的 Ollama 子进程。</li><li>浏览器页面自然关闭；模型权重和笔记继续保留在磁盘。</li></ol>
+      <h3>B. 点击页面右上角红色 ×</h3><ol><li>先显示程序自己的确认框。</li><li>取消：不执行任何关闭。</li><li>确认：标记为程序主动关闭，避免再出现浏览器离开提示。</li><li>使用带 <code>keepalive</code> 的 POST 请求调用 <code>/api/shutdown</code>。</li><li>Python 后台和独立 Ollama 服务按上述流程停止。</li><li>网页尝试执行 <code>window.close()</code>。</li><li>如果浏览器禁止脚本关闭普通标签页，程序会把页面替换为“paper-reader-assistant已关闭”结束页；后台已经停止，可以安全手动关掉该页。</li></ol>
+      <h3>C. 点击“关闭模型并释放内存”</h3><p>调用 Ollama 的卸载接口，只卸载当前选中模型。Python、网页和 Ollama 服务继续运行，可以立即切换模型或继续使用其他功能。</p>
+      <div class="table-wrap"><table><thead><tr><th>操作</th><th>HTML</th><th>Python 后台</th><th>模型内存</th><th>磁盘模型</th></tr></thead><tbody><tr><td>取消离开提示</td><td>保留</td><td>运行</td><td>保留</td><td>保留</td></tr><tr><td>确认直接关闭页面</td><td>关闭</td><td>关闭</td><td>释放</td><td>保留</td></tr><tr><td>右上角红色 ×</td><td>关闭或结束页</td><td>关闭</td><td>释放</td><td>保留</td></tr><tr><td>关闭模型并释放内存</td><td>保留</td><td>运行</td><td>释放当前模型</td><td>保留</td></tr><tr><td>只收起 AI/Zotero 球</td><td>保留</td><td>运行</td><td>不变</td><td>保留</td></tr></tbody></table></div>
+      <h3>D. 无法保证的异常情况</h3><p>浏览器崩溃、任务管理器强制结束、系统断电、操作系统强制关机或安全软件阻断 Beacon 时，页面可能来不及通知后台。这是浏览器和操作系统层面的限制。遇到这种情况，可在任务管理器结束对应 Python/Ollama 进程；模型文件仍不会因此删除。</p>
+      <div class="callout danger"><strong>不要把关闭“使用说明”页面理解为关闭助手。</strong> 本手册是单独标签页，关闭它不会停止论文助手。只有关闭主助手页面，或点击主助手右上角红色 ×，才执行关闭链路。</div>
+    </div></details>
+
+    <details class="chapter" id="privacy"><summary>10. 文件、配置与隐私</summary><div class="chapter-body">
+      <div class="table-wrap"><table><thead><tr><th>数据</th><th>保存位置/生命周期</th><th>是否上传</th></tr></thead><tbody><tr><td>Obsidian 笔记</td><td>用户选择的论文目录，长期保存</td><td>程序不主动上传</td></tr><tr><td>本地模型权重</td><td>用户选择的 Ollama 模型目录，长期保存</td><td>下载自模型仓库；分析时本地使用</td></tr><tr><td>output_dir、model_dir、local_model</td><td><code>config.json</code></td><td>不上传</td></tr><tr><td>API Key</td><td>默认仅网页会话；主动勾选后以 Windows 用户级密文保存</td><td>仅发给所选 API 服务进行鉴权</td></tr><tr><td>PDF 提取文字</td><td>请求期间在内存</td><td>云端模式会发送；本地模式不发送</td></tr><tr><td>Zotero 数据库</td><td>原位置只读访问</td><td>不整体上传</td></tr></tbody></table></div>
+      <p>选择云端模型前，应检查论文是否涉及未公开实验、合作单位数据、商业秘密、个人信息或受限版权内容。本地模型适合高隐私场景，但仍需保护模型目录和生成笔记。</p>
+    </div></details>
+
+    <details class="chapter" id="trouble"><summary>11. 常见问题排查</summary><div class="chapter-body">
+      <h3>双击 CMD 没反应</h3><p>确认使用英文名 <code>PaperReader.cmd</code>；程序会尝试 Codex 自带 Python、系统 <code>pythonw.exe</code> 或 <code>python.exe</code>。安全软件可能阻止脚本或本地端口。</p>
+      <h3>页面打不开</h3><p>重新双击启动器。若旧版本端口仍存在，使用当前版本地址 <code>127.0.0.1:8774</code>。不要直接双击 templates/index.html，因为保存功能需要 Python 后台。</p>
+      <h3>Zotero 列表为空</h3><p>确认 Zotero 数据目录在用户目录、数据库存在，且文献不是只有附件。点击“刷新”。Zotero 主文献和 PDF 附件的数量不同是正常的。</p>
+      <h3>本地 PDF 没有作者/期刊</h3><p>许多 PDF 没有正确内嵌元数据；离线情况下程序不会猜测。可从 Zotero 导入或人工填写。</p>
+      <h3>本地模型下载失败</h3><p>确认已安装 Ollama 或完整运行时位于 <code>runtime</code>，已选择模型目录，磁盘空间充足，网络能访问模型仓库。</p>
+      <h3>选择已有目录却找不到模型</h3><p>目录必须是 Ollama 模型库结构。单个 GGUF 文件需要先注册。若独立 11436 服务被旧进程占用，应先关闭旧助手。</p>
+      <h3>AI JSON 解析失败</h3><p>小模型可能不稳定遵守 JSON 格式。尝试 Qwen2.5 7B/14B 或更强模型；也可降低论文截取长度或改用云端模型。</p>
+      <h3>扫描 PDF 无正文</h3><p>扫描件需要 OCR。先用 Zotero、Adobe、OCRmyPDF 等工具生成文字层，再导入。</p>
+      <h3>红色 × 没关掉标签页</h3><p>浏览器可能禁止脚本关闭非脚本创建的标签页。只要出现“助手已关闭”结束页，后台和模型服务已经停止，手动关闭标签即可。</p>
+    </div></details>
+
+    <details class="chapter" id="workflow"><summary>12. 推荐论文阅读工作流</summary><div class="chapter-body">
+      <ol><li>双击 <code>PaperReader.cmd</code>。</li><li>从 Zotero 选择已下载论文，或点击“读取本地文档”。</li><li>检查题目、作者、期刊、年份和标签。</li><li>选择云端或本地 AI。涉及敏感内容时优先本地模型。</li><li>填写研究方向和标签后运行 AI，以便评价相关性。</li><li>人工核对 AI 提炼的研究问题、方法、创新点、结果与星级。</li><li>补充“对我的研究启发”，这是最需要个人判断的部分。</li><li>点击“生成 Obsidian 笔记”。</li><li>点击“一键清空”，继续下一篇。</li><li>全部完成后点击主页面右上角红色 ×，关闭模型、后台和页面。</li></ol>
+      <div class="callout info">AI 是结构化阅读助手，不是事实裁判。实验数字、对比结论、局限和引用位置都应回到原文核对。</div>
+    </div></details>
+
+    <footer>paper-reader-assistant · 交互式本地使用手册<br>点击任意章节标题可收缩；移动鼠标看看那条鱼。</footer>
+  </main>
+</div>
+<button class="top" type="button" title="返回顶部" onclick="scrollTo({top:0,behavior:'smooth'})">↑</button>
+<script>
+  let guideLanguage=new URLSearchParams(location.search).get('lang')||localStorage.getItem('paperReaderLanguage')||'zh';
+  guideLanguage=guideLanguage==='en'?'en':'zh';
+  const guideLanguageButton=document.querySelector('#guide-language');
+  function renderEnglishGuide(){
+    document.documentElement.lang='en'; document.title='paper-reader-assistant · Complete User Guide';
+    document.querySelector('nav').innerHTML=`<h2>Contents · Click to jump</h2><ol>
+      <li><a href="#overview">System Overview</a></li><li><a href="#start">Startup and Interface</a></li><li><a href="#sources">Zotero and Local Documents</a></li><li><a href="#form">Form, Clear, and Ratings</a></li><li><a href="#obsidian">Obsidian Output</a></li><li><a href="#cloud-ai">Cloud AI and API Keys</a></li><li><a href="#local-ai">Ollama and Local Models</a></li><li><a href="#model-life">Model, Context, and Data Lifecycle</a></li><li><a href="#closing">Closing Behavior</a></li><li><a href="#privacy">Files, Configuration, and Privacy</a></li><li><a href="#trouble">Troubleshooting</a></li><li><a href="#workflow">Recommended Workflow</a></li></ol><div class="callout info">Click any chapter heading to collapse or expand it. A contents link automatically opens its target chapter.</div>`;
+    document.querySelector('main.content').innerHTML=`
+      <header class="hero"><h1>paper-reader-assistant<br>Complete User Guide</h1><p class="lead">An integrated local workflow for Zotero, Obsidian, PDFs, cloud AI, and Ollama models. This guide explains every main control, storage behavior, model-memory lifecycle, and shutdown path.</p><div class="badges"><span class="badge">Version: paper-reader-assistant</span><span class="badge">Assistant: 8774</span><span class="badge">Managed Ollama: 11436</span><span class="badge">User-selected model folder</span></div></header>
+      <details class="chapter" id="overview" open><summary>1. System Overview</summary><div class="chapter-body"><p>This is not a standalone static HTML file. Double-clicking <code>PaperReader.cmd</code> starts a small Python service bound only to <code>127.0.0.1</code>, then opens the browser UI. The browser handles interaction; Python reads Zotero, opens local file pickers, calls AI models, and writes Markdown.</p><div class="flow"><span>PaperReader.cmd</span><b>→</b><span>pythonw.exe</span><b>→</b><span>local web page</span><b>→</b><span>manual or AI analysis</span><b>→</b><span>Obsidian note</span></div><ul class="checklist"><li>No Flask dependency.</li><li>Zotero reading works offline.</li><li>Local-model analysis can be fully offline.</li><li>Cloud AI requires a network connection and may cost money.</li><li>Output is portable Markdown.</li></ul></div></details>
+      <details class="chapter" id="start" open><summary>2. Startup and Interface</summary><div class="chapter-body"><h3>Start</h3><ol><li>Double-click <code>PaperReader.cmd</code>.</li><li>Your default browser opens <code>http://127.0.0.1:8774</code>.</li><li>If an old process owns the port, close that assistant first.</li></ol><h3>Language control</h3><p>Chinese is the first-run default. The top-right strip switches between a cute sun for Chinese and a cute star for English; only the strip animates between day and night. The alternate language appears below the strip. The preference is kept in browser storage.</p><div class="callout info">Switching languages does not clear, translate, or overwrite existing form text. New AI analysis follows the current UI language and fills only blank fields.</div><h3>Floating layers and movement</h3><p>Zotero stays above ordinary form content. The language and close controls sit above Zotero but below the AI panel. The AI ball and expanded AI panel are the highest regular floating layer. On narrow windows the Zotero panel moves below the top controls, becomes slightly narrower, and adapts its height so its collapse button cannot overlap the global close button.</p><p>Drag the AI ball to move it and snap it to an edge. Drag the AI panel by its title bar; on desktop, resize it from the lower-right corner. Positions are remembered and clamped back into the visible area after viewport resizing.</p></div></details>
+      <details class="chapter" id="sources"><summary>3. Zotero and Local Documents</summary><div class="chapter-body"><h3>Zotero</h3><p>The program opens <code>Zotero/zotero.sqlite</code> read-only. It reads title, authors, journal or conference, year, tags, collections, and a local PDF path when available. Clicking an item fills basic fields and opens the Zotero item through <code>zotero://</code>. Research area is not a standardized Zotero field and is not forced.</p><h3>Local files</h3><p>PDF, DOCX, Markdown, and TXT are supported. Embedded metadata is used where available; missing facts are not guessed online. Zotero full-text cache is preferred for PDFs, otherwise <code>pypdf</code> is used. Image-only scans need OCR.</p><div class="callout warn">Reading a local file does not add it to Zotero. The program never writes directly to Zotero SQLite.</div></div></details>
+      <details class="chapter" id="form"><summary>4. Form, Innovations, Clear, and Ratings</summary><div class="chapter-body"><p>The form covers metadata, background, gap, data, route, method, innovations, results, limitations, insights, and a one-sentence summary. Innovations are dynamic: add or delete as many as needed. Innovation, engineering value, and relevance start as “Not rated” and can be set manually or by AI.</p><p>AI fills only empty inputs, empty innovation entries, and unrated scores. “Clear All” resets the form, two innovation rows, all ratings, and the selected AI document; it never deletes an existing Obsidian note.</p></div></details>
+      <details class="chapter" id="obsidian"><summary>5. Obsidian Folder and Output</summary><div class="chapter-body"><p>Choose any vault or note folder. The latest selection is saved in <code>config.json</code>. Files use <code>YYYY-MM-DD_Paper Title.md</code>; illegal Windows characters are replaced and duplicate names receive <code>_2</code>, <code>_3</code>, and so on.</p><ul><li>YAML metadata for title, authors, journal, year, tags, and date.</li><li>Restrained purple headings and native Obsidian callouts.</li><li>“1. Basic Information” is a real Markdown heading.</li><li>Ratings are written as a table.</li></ul><div class="callout info">The reading-time guide shown in the UI is not exported to Markdown.</div></div></details>
+      <details class="chapter" id="cloud-ai"><summary>6. Cloud AI, Providers, and API Keys</summary><div class="chapter-body"><h3>Providers</h3><p>OpenAI / ChatGPT API is the default. Official DeepSeek, Doubao / Volcano Ark, and a custom OpenAI-compatible Chat Completions endpoint are also available.</p><h3>Default: do not save</h3><p>Without the checkbox, one entered key can be reused while the page stays open, then disappears on refresh, close, or restart.</p><h3>Optional encrypted saving</h3><p>Check “Save the API Key for this provider” and run analysis to store it using Windows DPAPI for the current signed-in user. It is restored when the same provider is selected. Uncheck and analyze to delete that provider's saved key.</p><div class="callout warn"><strong>Encrypted is not risk-free.</strong> Malware already controlling the same Windows account may still access it. Keep saving disabled on shared or public computers and for high-security work.</div><p>Cloud mode sends extracted paper text to the selected provider and may incur charges. ChatGPT Plus/Pro is separate from OpenAI API billing.</p><h3>Output language</h3><p>“AI Fill Language” offers Follow Current UI (default), Chinese, and English. It can be overridden independently, so a Chinese UI can still request English results and vice versa. Existing content remains unchanged.</p></div></details>
+      <details class="chapter" id="local-ai"><summary>7. Ollama and Local Models</summary><div class="chapter-body"><p>Ollama downloads, stores, loads, and serves language models locally. Paper text is not sent to OpenAI, DeepSeek, or Doubao in local mode. Install Ollama or place its Windows runtime in <code>runtime</code>. Model files stay in a folder chosen by the user.</p><p>The assistant uses a separate service at <code>127.0.0.1:11436</code> and points <code>OLLAMA_MODELS</code> to that folder. Existing libraries should contain <code>manifests</code> and <code>blobs</code>; standalone GGUF files must first be registered with a Modelfile.</p><div class="table-wrap"><table><thead><tr><th>Size</th><th>Typical Download</th><th>Suggested Minimum RAM</th><th>Experience</th></tr></thead><tbody><tr><td>1.5B–3B</td><td>1–2 GB</td><td>8 GB</td><td>Fast extraction and basic summaries.</td></tr><tr><td>7B–8B</td><td>4.7–5 GB</td><td>16 GB</td><td>Starter paper analysis; CPU can be slow.</td></tr><tr><td>14B</td><td>about 9 GB</td><td>24 GB</td><td>Better research analysis; 10–12 GB VRAM suggested.</td></tr><tr><td>32B</td><td>about 20 GB</td><td>48 GB</td><td>Stronger reasoning; 20–24 GB VRAM suggested.</td></tr></tbody></table></div></div></details>
+      <details class="chapter" id="model-life" open><summary>8. Model, Context, and Data Lifecycle</summary><div class="chapter-body"><p>Each paper is one independent request containing its extracted text, the fixed output schema, and the current research area/tags. Context from a previous paper is not carried into the next paper.</p><p>On first local analysis, Ollama loads the model into RAM/VRAM. <code>OLLAMA_KEEP_ALIVE=-1</code> keeps it loaded for consecutive papers. “Unload Model and Free Memory” unloads only the current model; closing the main assistant stops the managed Ollama process. Neither action deletes model files.</p><p>The program does not maintain AI chat history. Extracted text lives in memory during the request. Structured results are saved only when you generate an Obsidian note. Configuration contains folders, the chosen model, and encrypted API keys only when explicitly enabled.</p></div></details>
+      <details class="chapter" id="closing" open><summary>9. Closing Behavior (Important)</summary><div class="chapter-body"><div class="callout info"><strong>Normal result:</strong> closing the main assistant page and confirming leave sends a shutdown beacon to Python. Python stops its managed Ollama child process. Notes and model files remain on disk.</div><h3>Direct browser close</h3><ol><li><code>beforeunload</code> triggers the browser's native leave confirmation.</li><li>Cancel keeps the page, backend, and model running.</li><li>Confirm triggers <code>pagehide</code> and <code>sendBeacon('/api/shutdown')</code>.</li><li>Python shuts down the HTTP server and terminates managed Ollama.</li></ol><h3>Red ×</h3><p>The app shows its own confirmation, posts to <code>/api/shutdown</code> with keepalive, then tries <code>window.close()</code>. If the browser blocks scripted tab closing, a safe “closed” page appears and can be closed manually.</p><h3>Unload button</h3><p>Only the selected model leaves RAM/VRAM. Python, the HTML page, and the Ollama service continue running.</p><div class="callout danger">Closing this guide tab does not close the assistant. Browser crashes, force-kills, power loss, or blocked beacons cannot guarantee cleanup; use Task Manager if needed.</div></div></details>
+      <details class="chapter" id="privacy"><summary>10. Files, Configuration, and Privacy</summary><div class="chapter-body"><div class="table-wrap"><table><thead><tr><th>Data</th><th>Location / Lifecycle</th><th>Upload</th></tr></thead><tbody><tr><td>Obsidian notes</td><td>User-selected folder; persistent</td><td>Not uploaded by the app</td></tr><tr><td>Local model weights</td><td>User-selected Ollama folder; persistent</td><td>Used locally after download</td></tr><tr><td>Configuration</td><td><code>config.json</code></td><td>Not uploaded</td></tr><tr><td>API Key</td><td>Session-only by default; Windows user-encrypted if opted in</td><td>Sent only to the selected API for authentication</td></tr><tr><td>Extracted PDF text</td><td>Memory during request</td><td>Sent in cloud mode; local in Ollama mode</td></tr><tr><td>Zotero database</td><td>Read-only at its original location</td><td>Never uploaded as a database</td></tr></tbody></table></div><p>For unpublished experiments, partner data, personal information, trade secrets, or restricted material, prefer a local model and protect both the model folder and generated notes.</p></div></details>
+      <details class="chapter" id="trouble"><summary>11. Troubleshooting</summary><div class="chapter-body"><h3>CMD appears to do nothing</h3><p>Use <code>PaperReader.cmd</code>. It prefers <code>pythonw.exe</code>, so no black console is expected. Security software may block scripts or local ports.</p><h3>Page does not open</h3><p>Run the launcher again and close any old process using port 8774. Do not open <code>templates/index.html</code> directly; saving requires Python.</p><h3>Zotero list is empty</h3><p>Check the Zotero data folder and database, then click Refresh. Parent items and PDF attachment counts naturally differ.</p><h3>Missing PDF metadata</h3><p>Many PDFs contain poor metadata. Offline mode does not guess; import from Zotero or fill it manually.</p><h3>Model download or JSON failure</h3><p>Check Ollama, disk space, network, and the selected model folder. Small models may fail strict JSON; try Qwen2.5 7B/14B or a capable cloud model.</p><h3>Scanned PDF has no text</h3><p>Create a text layer first with an OCR tool.</p></div></details>
+      <details class="chapter" id="workflow"><summary>12. Recommended Workflow</summary><div class="chapter-body"><ol><li>Start <code>PaperReader.cmd</code>.</li><li>Select a downloaded Zotero paper or read a local document.</li><li>Check title, authors, journal, year, and tags.</li><li>Choose cloud or local AI; prefer local for sensitive papers.</li><li>Set the UI to the language you want AI to generate.</li><li>Optionally enable encrypted API Key saving; leave it off on shared machines.</li><li>Add research context, run AI, and verify every result and rating.</li><li>Add your own research insights.</li><li>Generate the Obsidian note, clear the form, and continue.</li><li>When finished, use the red × on the main page.</li></ol><div class="callout info">AI structures reading; it is not a fact judge. Verify numbers, comparisons, limitations, and quotations in the original paper.</div></div></details>
+      <footer>paper-reader-assistant · Interactive Local Guide<br>Click chapter titles to collapse them; move the pointer to meet the fish.</footer>`;
+    document.querySelector('.top').title='Back to top';
+  }
+  if(guideLanguage==='en') renderEnglishGuide();
+  guideLanguageButton.textContent=guideLanguage==='en'?'中文 · ☀':'English · ★';
+  guideLanguageButton.classList.toggle('night',guideLanguage==='en');
+  guideLanguageButton.addEventListener('click',()=>{
+    const next=guideLanguage==='en'?'zh':'en'; localStorage.setItem('paperReaderLanguage',next);
+    const url=new URL(location.href); url.searchParams.set('lang',next); location.href=url.toString();
+  });
+
+  // Directory links open the target chapter before scrolling.
+  document.querySelectorAll('nav a[href^="#"]').forEach(link=>link.addEventListener('click',()=>{
+    const target=document.querySelector(link.getAttribute('href')); if(target?.tagName==='DETAILS') target.open=true;
+  }));
+  if(location.hash){const target=document.querySelector(location.hash);if(target?.tagName==='DETAILS')target.open=true}
+
+  // Click ripple, without intercepting the page's normal click behavior.
+  addEventListener('click',event=>{
+    const ripple=document.createElement('i');ripple.className='ripple';ripple.style.left=`${event.clientX}px`;ripple.style.top=`${event.clientY}px`;document.body.appendChild(ripple);setTimeout(()=>ripple.remove(),800);
+  });
+
+  // A soft canvas fish that follows the cursor above the text without blocking interaction.
+  const canvas=document.querySelector('#life-canvas'),ctx=canvas.getContext('2d');
+  let dpr=1,w=innerWidth,h=innerHeight,fish={x:w*.75,y:h*.3,tx:w*.75,ty:h*.3,vx:0,phase:0},bubbles=[];
+  function resize(){dpr=Math.min(devicePixelRatio||1,2);w=innerWidth;h=innerHeight;canvas.width=w*dpr;canvas.height=h*dpr;canvas.style.width=w+'px';canvas.style.height=h+'px';ctx.setTransform(dpr,0,0,dpr,0,0)}
+  resize();addEventListener('resize',resize);
+  addEventListener('pointermove',e=>{fish.tx=e.clientX;fish.ty=e.clientY});
+  function bubble(){bubbles.push({x:20+Math.random()*(w-40),y:h+15,r:3+Math.random()*7,s:.35+Math.random()*.75,wiggle:Math.random()*6.28,alpha:.25+Math.random()*.35});setTimeout(bubble,900+Math.random()*2300)}
+  setTimeout(bubble,500);
+  function drawFish(){
+    const dx=fish.tx-fish.x,dy=fish.ty-fish.y;fish.vx+=dx*.0028;fish.vx*=.88;fish.x+=dx*.035;fish.y+=dy*.035;fish.phase+=.12;
+    const flip=dx<0?-1:1,angle=Math.atan2(dy,Math.abs(dx)+40)*flip;
+    ctx.save();ctx.translate(fish.x,fish.y);ctx.rotate(angle);ctx.scale(flip,1);ctx.globalAlpha=.78;
+    const tail=Math.sin(fish.phase)*6;ctx.fillStyle='#7952a8';ctx.beginPath();ctx.moveTo(-25,0);ctx.lineTo(-48,-18+tail);ctx.lineTo(-44,18+tail);ctx.closePath();ctx.fill();
+    const grad=ctx.createLinearGradient(-24,-16,26,16);grad.addColorStop(0,'#a888d0');grad.addColorStop(1,'#4b9b8d');ctx.fillStyle=grad;ctx.beginPath();ctx.ellipse(0,0,30,17,0,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#d9c6ed';ctx.beginPath();ctx.moveTo(-4,-14);ctx.quadraticCurveTo(7,-31,14,-13);ctx.fill();
+    ctx.fillStyle='white';ctx.beginPath();ctx.arc(17,-5,4.5,0,Math.PI*2);ctx.fill();ctx.fillStyle='#251c30';ctx.beginPath();ctx.arc(19,-5,2,0,Math.PI*2);ctx.fill();
+    ctx.strokeStyle='#e7dcf2';ctx.lineWidth=1.5;ctx.beginPath();ctx.arc(21,4,7,.35,1.6);ctx.stroke();ctx.restore();
+  }
+  function frame(){ctx.clearRect(0,0,w,h);for(let i=bubbles.length-1;i>=0;i--){const b=bubbles[i];b.y-=b.s;b.wiggle+=.025;b.x+=Math.sin(b.wiggle)*.2;ctx.globalAlpha=b.alpha;ctx.strokeStyle='#4f9f93';ctx.lineWidth=1.3;ctx.beginPath();ctx.arc(b.x,b.y,b.r,0,Math.PI*2);ctx.stroke();ctx.beginPath();ctx.arc(b.x-b.r*.25,b.y-b.r*.25,b.r*.22,0,Math.PI*2);ctx.stroke();if(b.y<-20)bubbles.splice(i,1)}ctx.globalAlpha=1;drawFish();requestAnimationFrame(frame)}
+  if(!matchMedia('(prefers-reduced-motion: reduce)').matches)requestAnimationFrame(frame);
+</script>
+</body>
+</html>
