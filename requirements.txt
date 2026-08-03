@@ -1,0 +1,8 @@
+# paper-reader-assistant依赖
+# 主体仅使用 Python 标准库，以下为可选依赖
+
+# PDF 正文提取（非 Zotero 缓存的 PDF 需要）
+pypdf>=4.0,<6.0
+
+# 跨平台 API Key 加密（替代 Windows DPAPI，macOS/Linux 使用）
+# keyring>=24.0  # 可选：跨平台密钥管理
