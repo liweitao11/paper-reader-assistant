@@ -69,8 +69,7 @@ paper-reader-assistant 是一个面向科研阅读场景的本地PaperFlow。它
 
 ### 方式一：下载 Release 压缩包（推荐）
 
-<!-- 发布 Release 后，把下载链接替换到下一行 -->
-> 最新版：`<你的 GitHub Releases 下载链接>`（发布包：`paper-reader-assistant-v1.0.zip`）
+> 最新版：`[<你的 GitHub Releases 下载链接>](https://github.com/liweitao11/paper-reader-assistant/releases/tag/v1.0.0)`（发布包：`paper-reader-assistant-v1.0.zip`）
 
 下载后解压，双击 `PaperReader.cmd` 即可启动。首次使用可选择 Ollama 模型目录；`runtime/` 目录可放置 Windows 版 `ollama.exe`，也可直接安装 Ollama。
 
@@ -82,7 +81,7 @@ cd paper-reader-assistant
 python paper_reader.py
 ```
 
-（可选）安装 PDF 提取依赖：
+（可选，使用本地模型分析要用）安装 PDF 提取依赖：
 
 ```bash
 pip install pypdf
@@ -203,7 +202,7 @@ paper-reader-assistant/
 <details>
 <summary>扫描 PDF 没有正文？</summary>
 
-扫描件需要 OCR。先用 Zotero、Adobe、OCRmyPDF 等工具生成文字层。
+扫描件需要 OCR（Pdf为扫描件可能出现该问题）。先用 Zotero、Adobe、OCRmyPDF 等工具生成文字层。
 </details>
 
 <details>
