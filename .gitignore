@@ -1,0 +1,33 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.venv/
+venv/
+env/
+
+# 配置文件（含加密 API Key，不应上传）
+config.json
+
+# Ollama 运行时（体积过大，用户自行下载）
+runtime/ollama.exe
+runtime/*.exe
+
+# 系统文件
+.DS_Store
+Thumbs.db
+desktop.ini
+*.tmp
+*.log
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# 测试
+.pytest_cache/
+.coverage
+htmlcov/
