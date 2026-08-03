@@ -1,0 +1,825 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>paper-reader-assistant</title>
+  <style>
+    :root { --bg:#f4f1ea; --card:#fffdf8; --ink:#202522; --muted:#68716b; --accent:#286354; --line:#d9ded8; }
+    * { box-sizing:border-box; }
+    body { margin:0; color:var(--ink); background:linear-gradient(135deg,#e9eee8,var(--bg) 45%); font:16px/1.65 system-ui,"Microsoft YaHei",sans-serif; }
+    .top-controls { position:fixed; z-index:1000; right:14px; top:12px; display:flex; align-items:flex-start; gap:9px; }
+    .app-close { width:42px; height:42px; padding:0; border-radius:50%; background:#8e3b45; color:#fff; font-size:27px; line-height:1; box-shadow:0 6px 20px #35161a55; }
+    .app-close:hover { background:#ad3442; }
+    .language-control { display:grid; justify-items:center; gap:2px; }
+    .language-switch { position:relative; width:154px; height:42px; padding:0; overflow:hidden; border:1px solid #d7c9a9; border-radius:999px; color:#473b28; background:linear-gradient(90deg,#ffeeb1,#fff7dd); box-shadow:0 6px 20px #4939162b; transition:background .55s ease,border-color .55s ease,color .55s ease; }
+    .language-switch.night { color:#eef0ff; border-color:#504c82; background:linear-gradient(90deg,#22284f,#343061); }
+    .language-switch .sky-art { position:absolute; left:5px; top:4px; width:32px; height:32px; transition:transform .55s cubic-bezier(.2,.8,.2,1),opacity .35s ease; }
+    .language-switch .star-art { left:auto; right:5px; opacity:0; transform:translateX(18px) rotate(20deg); }
+    .language-switch.night .sun-art { opacity:0; transform:translateX(-18px) rotate(-25deg); }
+    .language-switch.night .star-art { opacity:1; transform:translateX(0) rotate(0); }
+    .language-switch .switch-label { position:absolute; inset:0; display:grid; place-items:center; padding:0 34px; font-size:14px; font-weight:850; letter-spacing:.02em; }
+    .language-hint { color:var(--muted); font-size:10px; line-height:1.2; white-space:nowrap; }
+    .save-key-row { display:flex; gap:9px; align-items:flex-start; padding:9px 11px; border:1px solid #d8cce8; border-radius:9px; background:#faf7fd; }
+    .save-key-row input { width:17px; height:17px; margin:3px 0 0; flex:0 0 auto; }
+    .save-key-row label { margin:0; font-size:13px; font-weight:650; cursor:pointer; }
+    .key-security { display:block; color:var(--muted); font-size:11px; font-weight:400; }
+    main { width:min(1480px,calc(100% - 32px)); margin:42px auto 80px; }
+    header { margin-bottom:28px; }
+    h1 { margin:0; font:700 clamp(30px,5vw,52px)/1.15 Georgia,"Microsoft YaHei",serif; }
+    .subtitle,.path { color:var(--muted); }
+    .path { overflow-wrap:anywhere; font-size:14px; }
+    .card { background:var(--card); border:1px solid var(--line); border-radius:18px; padding:clamp(20px,4vw,38px); box-shadow:0 14px 45px #29382d12; margin-top:24px; }
+    fieldset { border:0; padding:0; margin:0 0 32px; }
+    legend { width:100%; font-size:22px; font-weight:700; padding-bottom:10px; border-bottom:1px solid var(--line); margin-bottom:18px; }
+    .grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:18px; }
+    .wide { grid-column:1/-1; }
+    label { display:block; font-weight:650; margin-bottom:6px; }
+    input,textarea,select { width:100%; border:1px solid #bdc7c0; border-radius:10px; padding:11px 13px; background:#fff; color:inherit; font:inherit; }
+    textarea { min-height:110px; resize:vertical; }
+    input:focus,textarea:focus,select:focus { outline:3px solid #87b9a84d; border-color:var(--accent); }
+    button { border:0; border-radius:12px; padding:12px 18px; background:var(--accent); color:#fff; font-size:16px; font-weight:750; cursor:pointer; }
+    button:disabled { opacity:.6; cursor:wait; }
+    #status { min-height:28px; margin:14px 0 0; text-align:center; overflow-wrap:anywhere; }
+    #status.ok { color:#17643f; } #status.error { color:#a52b2b; }
+    .guide h2 { font-size:28px; } .guide h3 { margin-top:30px; }
+    table { width:100%; border-collapse:collapse; margin:12px 0 24px; }
+    th,td { border:1px solid var(--line); padding:9px 12px; text-align:left; }
+    th { background:#edf2ee; }
+    .guide-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:20px; }
+    .phase { border-left:4px solid var(--accent); padding-left:18px; }
+    .workspace { display:grid; grid-template-columns:minmax(0,1fr) 390px; gap:24px; align-items:start; transition:.2s; }
+    .workspace.sidebar-collapsed { grid-template-columns:minmax(0,1fr); }
+    .toolbar { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+    .toolbar .path { margin:0; flex:1; }
+    .secondary { color:var(--accent); background:#e6efeb; }
+    .guide-link { display:inline-block; border-radius:12px; padding:10px 16px; background:#eee8f5; color:#67418f; font-weight:750; text-decoration:none; }
+    .danger { color:#8b3030; background:#f5e8e6; }
+    .actions { display:grid; grid-template-columns:1fr auto; gap:12px; }
+    .zotero-panel { position:sticky; z-index:900; top:18px; max-height:calc(100vh - 36px); padding:16px; overflow:hidden; }
+    .zotero-head { display:flex; align-items:center; justify-content:space-between; gap:8px; }
+    .zotero-head h2 { margin:0; font-size:21px; }
+    .icon-button { padding:7px 10px; min-width:38px; }
+    .zotero-controls { display:flex; gap:8px; margin:14px 0; }
+    .zotero-controls input { min-width:0; }
+    .zotero-controls button { padding:8px 11px; }
+    .zotero-list { overflow:auto; max-height:calc(100vh - 175px); padding-right:3px; }
+    .zotero-item { width:100%; color:var(--ink); background:#fff; border:1px solid var(--line); padding:12px; margin-bottom:9px; text-align:left; font-weight:400; }
+    .zotero-item:hover { border-color:var(--accent); background:#f1f7f4; }
+    .zotero-title { font-weight:750; line-height:1.35; }
+    .zotero-meta,.zotero-collection { color:var(--muted); font-size:13px; margin-top:5px; }
+    .local-import { width:100%; margin-top:14px; background:#445f77; }
+    .workspace.sidebar-collapsed .zotero-panel { display:none; }
+    .zotero-fab { display:none; position:fixed; z-index:950; right:18px; top:42vh; width:58px; height:58px; padding:0; border-radius:50%; box-shadow:0 8px 25px #182a2380; font-size:25px; align-items:center; justify-content:center; touch-action:none; user-select:none; cursor:grab; }
+    .zotero-fab:active { cursor:grabbing; }
+    .workspace.sidebar-collapsed ~ .zotero-fab { display:flex; }
+    @media (max-width:950px) {
+      .workspace,.workspace.sidebar-collapsed { grid-template-columns:1fr; }
+      .zotero-panel { position:fixed; z-index:900; right:12px; top:78px; width:min(370px,calc(100vw - 24px)); height:min(680px,calc(100dvh - 90px)); max-height:calc(100dvh - 90px); margin:0; display:flex; flex-direction:column; box-shadow:0 15px 50px #17251f66; }
+      .zotero-body { min-height:0; flex:1; display:flex; flex-direction:column; }
+      .zotero-list { min-height:60px; max-height:none; flex:1; }
+    }
+    @media (max-width:700px) { .grid,.guide-grid { grid-template-columns:1fr; } .actions { grid-template-columns:1fr; } }
+    .innovation-list { display:grid; gap:14px; }
+    .innovation-row { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:10px; align-items:start; }
+    .innovation-row button { margin-top:32px; padding:9px 12px; }
+    .add-innovation { margin-top:12px; background:#6d4ea0; }
+    .ai-fab { position:fixed; z-index:1150; right:18px; bottom:18px; width:60px; height:60px; padding:0; border-radius:50%; background:#6d3eb5; box-shadow:0 8px 25px #2d174c66; font-size:18px; touch-action:none; user-select:none; cursor:grab; }
+    .ai-fab:active { cursor:grabbing; }
+    .ai-panel { display:none; position:fixed; z-index:1100; right:88px; bottom:18px; width:min(410px,calc(100vw - 16px)); min-width:min(300px,calc(100vw - 16px)); max-width:calc(100vw - 16px); max-height:calc(100dvh - 16px); overflow:auto; overscroll-behavior:contain; margin:0; padding:20px; box-shadow:0 16px 55px #20122f66; resize:both; }
+    .ai-panel.open { display:block; }
+    .ai-head { display:flex; justify-content:space-between; align-items:center; gap:10px; cursor:move; touch-action:none; user-select:none; }
+    .ai-head .icon-button { cursor:pointer; }
+    .ai-head h2 { margin:0; font-size:21px; color:#6d3eb5; }
+    .ai-grid { display:grid; gap:11px; margin-top:14px; }
+    .ai-file { padding:9px 11px; background:#f0eafa; border-radius:9px; color:#5c4772; font-size:13px; overflow-wrap:anywhere; }
+    .ai-note { color:var(--muted); font-size:12px; margin:0; }
+    .ai-run { width:100%; background:#6d3eb5; }
+    #ai-status { min-height:24px; margin:8px 0 0; font-size:13px; overflow-wrap:anywhere; }
+    .ai-modes { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+    .ai-mode { background:#eee8f5; color:#60427e; }
+    .ai-mode.active { background:#6d3eb5; color:#fff; }
+    .local-box { display:grid; gap:10px; padding:12px; border:1px solid #d8cce8; border-radius:11px; background:#faf7fd; }
+    .local-dir { color:var(--muted); font-size:12px; overflow-wrap:anywhere; }
+    [hidden] { display:none !important; }
+    .model-dialog { z-index:1400; width:min(1120px,96vw); max-height:92vh; border:0; border-radius:16px; padding:0; color:var(--ink); background:var(--card); }
+    .model-dialog::backdrop { background:#171020b8; }
+    .model-manager { padding:24px; }
+    .model-manager-head { display:flex; justify-content:space-between; align-items:center; gap:14px; }
+    .model-manager-head h2 { margin:0; color:#6d3eb5; }
+    .model-runtime { margin:14px 0; padding:12px; background:#f2edf8; border-radius:10px; }
+    .model-table-wrap { overflow:auto; }
+    .model-table { min-width:900px; }
+    .model-table button { padding:7px 11px; white-space:nowrap; }
+    .model-actions { display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-top:16px; }
+    .model-actions a { color:#6d3eb5; font-weight:700; }
+    #model-job-status { min-height:24px; color:#60427e; }
+    @media (max-width:700px) { .innovation-row { grid-template-columns:1fr; } .innovation-row button { margin-top:0; } .ai-panel { right:8px; bottom:82px; width:calc(100vw - 16px); min-width:0; max-height:calc(100dvh - 90px); resize:none; } .language-switch{width:132px}.language-hint{display:none} main{margin-top:70px} }
+  </style>
+  <link rel="stylesheet" href="darkmode.css">
+</head>
+<body>
+<div class="top-controls">
+  <div class="language-control">
+    <button class="language-switch" id="language-switch" type="button" title="Switch to English" aria-label="Switch to English">
+      <img class="sky-art sun-art" alt="" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cg stroke='%23E29A1F' stroke-width='4' stroke-linecap='round'%3E%3Cpath d='M32 3v8M32 53v8M3 32h8M53 32h8M11.5 11.5l6 6M46.5 46.5l6 6M52.5 11.5l-6 6M17.5 46.5l-6 6'/%3E%3C/g%3E%3Ccircle cx='32' cy='32' r='17' fill='%23FFD75E' stroke='%23E29A1F' stroke-width='3'/%3E%3Ccircle cx='26' cy='29' r='2.2' fill='%2351432C'/%3E%3Ccircle cx='38' cy='29' r='2.2' fill='%2351432C'/%3E%3Cpath d='M25 37q7 7 14 0' fill='none' stroke='%2351432C' stroke-width='2.5' stroke-linecap='round'/%3E%3Ccircle cx='21' cy='34' r='2.4' fill='%23F59B80' opacity='.7'/%3E%3Ccircle cx='43' cy='34' r='2.4' fill='%23F59B80' opacity='.7'/%3E%3C/svg%3E">
+      <img class="sky-art star-art" alt="" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cpath d='M32 5l7.8 16 17.7 2.6-12.8 12.5 3 17.6L32 45.4l-15.7 8.3 3-17.6L6.5 23.6 24.2 21z' fill='%23FFE784' stroke='%23D6B83C' stroke-width='3' stroke-linejoin='round'/%3E%3Ccircle cx='26' cy='29' r='2.2' fill='%23413D55'/%3E%3Ccircle cx='38' cy='29' r='2.2' fill='%23413D55'/%3E%3Cpath d='M26 36q6 5 12 0' fill='none' stroke='%23413D55' stroke-width='2.5' stroke-linecap='round'/%3E%3Ccircle cx='21.5' cy='34' r='2.3' fill='%23F3A6B7' opacity='.75'/%3E%3Ccircle cx='42.5' cy='34' r='2.3' fill='%23F3A6B7' opacity='.75'/%3E%3C/svg%3E">
+      <span class="switch-label">中文</span>
+    </button>
+    <span class="language-hint">Switch to English</span>
+  </div>
+  <button class="app-close" id="close-app" type="button" title="关闭模型、后台与页面" aria-label="关闭paper-reader-assistant">×</button>
+</div>
+<main>
+  <header>
+    <h1>paper-reader-assistant</h1>
+    <p class="subtitle">把阅读过程沉淀为结构化的 Obsidian 知识。</p>
+    <div class="toolbar"><p class="path">保存目录：<span id="output-dir">{{ output_dir }}</span></p><a class="guide-link" href="/guide" target="_blank">使用说明</a><button class="secondary" id="choose-dir" type="button">选择 Obsidian 目录</button></div>
+  </header>
+
+  <div class="workspace" id="workspace">
+  <div class="content">
+  <form class="card" id="paper-form">
+    <fieldset>
+      <legend>1. 基本信息</legend>
+      <div class="grid">
+        <div class="wide"><label for="title">论文题目 *</label><input id="title" name="title" required></div>
+        <div><label for="author">作者</label><input id="author" name="author"></div>
+        <div><label for="journal">期刊</label><input id="journal" name="journal"></div>
+        <div><label for="year">年份</label><input id="year" name="year" inputmode="numeric"></div>
+        <div><label for="research_area">研究方向</label><input id="research_area" name="research_area" placeholder="自行填写；Zotero 无统一的研究方向字段"></div>
+        <div class="wide"><label for="tags">标签（逗号分隔）</label><input id="tags" name="tags" placeholder="AI, 数字孪生, 机器人"></div>
+      </div>
+    </fieldset>
+    <fieldset><legend>2. 研究问题</legend><div class="grid">
+      <div><label for="background">研究背景</label><textarea id="background" name="background"></textarea></div>
+      <div><label for="core_problem">核心问题</label><textarea id="core_problem" name="core_problem"></textarea></div>
+    </div></fieldset>
+    <fieldset><legend>3. 方法框架</legend><div class="grid">
+      <div><label for="data_source">数据来源</label><textarea id="data_source" name="data_source"></textarea></div>
+      <div><label for="core_method">核心方法</label><textarea id="core_method" name="core_method"></textarea></div>
+      <div class="wide"><label for="technical_route">技术路线</label><textarea id="technical_route" name="technical_route" placeholder="输入数据 → 核心算法 → 结果输出"></textarea></div>
+    </div></fieldset>
+    <fieldset><legend>4. 创新点</legend>
+      <div class="innovation-list" id="innovation-list"></div>
+      <button class="add-innovation" id="add-innovation" type="button">＋ 添加创新点</button>
+    </fieldset>
+    <fieldset><legend>5. 实验结果</legend><div class="grid">
+      <div><label for="metric">指标</label><input id="metric" name="metric"></div>
+      <div><label for="metric_result">结果</label><input id="metric_result" name="metric_result"></div>
+      <div class="wide"><label for="conclusion">主要结论</label><textarea id="conclusion" name="conclusion"></textarea></div>
+    </div></fieldset>
+    <fieldset><legend>6–8. 评价与启发</legend><div class="grid">
+      <div class="wide"><label for="limitation">论文不足</label><textarea id="limitation" name="limitation"></textarea></div>
+      <div><label for="useful_method">可借鉴方法</label><textarea id="useful_method" name="useful_method"></textarea></div>
+      <div><label for="future_direction">潜在创新方向</label><textarea id="future_direction" name="future_direction"></textarea></div>
+      <div class="wide"><label for="one_sentence">一句话总结</label><textarea id="one_sentence" name="one_sentence" placeholder="本文针对…问题，提出…方法，实现…目标，但仍存在…不足。"></textarea></div>
+      <div><label for="innovation_rating">创新性</label><select id="innovation_rating" name="innovation_rating"><option value="">未评价</option><option>★★★★★</option><option>★★★★☆</option><option>★★★☆☆</option><option>★★☆☆☆</option><option>★☆☆☆☆</option></select></div>
+      <div><label for="engineering_rating">工程价值</label><select id="engineering_rating" name="engineering_rating"><option value="">未评价</option><option>★★★★★</option><option>★★★★☆</option><option>★★★☆☆</option><option>★★☆☆☆</option><option>★☆☆☆☆</option></select></div>
+      <div><label for="relevance_rating">相关性</label><select id="relevance_rating" name="relevance_rating"><option value="">未评价</option><option>★★★★★</option><option>★★★★☆</option><option>★★★☆☆</option><option>★★☆☆☆</option><option>★☆☆☆☆</option></select></div>
+    </div></fieldset>
+    <div class="actions"><button type="submit">生成 Obsidian 笔记</button><button class="danger" id="clear-form" type="button">一键清空</button></div>
+    <p id="status" role="status" aria-live="polite"></p>
+  </form>
+
+  <section class="card guide">
+    <h2>📖 通用论文阅读重点与时间分配</h2>
+    <div class="phase"><h3>第一阶段：快速筛选（10 min）</h3><p>目标：判断论文是否值得精读。</p></div>
+    <table><thead><tr><th>部分</th><th>时间</th><th>重点</th></tr></thead><tbody><tr><td>标题</td><td>1 min</td><td>研究对象、方法</td></tr><tr><td>摘要</td><td>5 min</td><td>问题、方法、结果</td></tr><tr><td>结论</td><td>4 min</td><td>贡献、不足</td></tr></tbody></table>
+    <div class="phase"><h3>第二阶段：寻找创新（30 min）</h3></div>
+    <div class="guide-grid"><div><h4>Introduction · 15 min</h4><ul><li>为什么做？</li><li>当前不足？</li><li>作者解决什么问题？</li></ul></div><div><h4>Method · 15 min</h4><ul><li>输入数据</li><li>技术路线</li><li>核心模块</li></ul></div></div>
+    <div class="phase"><h3>第三阶段：评价论文（20 min）</h3></div>
+    <div class="guide-grid"><div><h4>Results · 10 min</h4><ul><li>对比实验</li><li>消融实验</li><li>工程验证</li></ul></div><div><h4>Discussion · 10 min</h4><ul><li>局限</li><li>未来方向</li></ul></div></div>
+    <h3>总阅读时间建议</h3>
+    <table><thead><tr><th>论文类型</th><th>时间</th></tr></thead><tbody><tr><td>普通参考文献</td><td>30–40 min</td></tr><tr><td>高度相关论文</td><td>1–2 h</td></tr><tr><td>准备复现论文</td><td>3–5 h</td></tr><tr><td>顶刊核心论文</td><td>5 h 以上</td></tr></tbody></table>
+  </section>
+  </div>
+
+  <aside class="card zotero-panel">
+    <div class="zotero-head"><h2>📚 Zotero 文献</h2><button class="icon-button" id="toggle-zotero" type="button" title="收起文献栏">›</button></div>
+    <div class="zotero-body">
+      <button class="local-import" id="local-document" type="button">📄 读取本地文档</button>
+      <div class="zotero-controls"><input id="zotero-search" type="search" placeholder="搜索题目、作者、标签…"><button id="refresh-zotero" type="button">刷新</button></div>
+      <p class="zotero-meta" id="zotero-status">正在读取 Zotero…</p>
+      <div class="zotero-list" id="zotero-list"></div>
+    </div>
+  </aside>
+  </div>
+  <button class="zotero-fab" id="zotero-fab" type="button" title="打开 Zotero 文献栏">Z</button>
+</main>
+<button class="ai-fab" id="ai-fab" type="button" title="AI 论文阅读">AI</button>
+<section class="card ai-panel" id="ai-panel" aria-label="AI 论文阅读">
+  <div class="ai-head"><h2>AI 论文阅读</h2><button class="icon-button" id="close-ai" type="button">×</button></div>
+  <div class="ai-grid">
+    <div class="ai-file" id="ai-file">尚未选择文档。请从本地文档或 Zotero 选择一篇带 PDF 的论文。</div>
+    <div class="ai-modes"><button class="ai-mode active" id="cloud-mode" type="button">云端模型</button><button class="ai-mode" id="local-mode" type="button">切换本地模型</button></div>
+    <div><label for="ai-output-language">AI 填空语言</label><select id="ai-output-language"><option value="auto">跟随当前界面（默认）</option><option value="zh">中文</option><option value="en">English</option></select></div>
+    <div class="ai-grid" id="cloud-settings">
+      <div><label for="ai-provider">接口提供商</label><select id="ai-provider"><option value="openai">OpenAI / ChatGPT API（默认）</option><option value="deepseek">DeepSeek 官方 API</option><option value="doubao">豆包/火山方舟官方 API</option><option value="custom">自定义 OpenAI 兼容接口</option></select></div>
+      <div><label for="ai-key">API Key（当前页面会话）</label><input id="ai-key" type="password" autocomplete="off" placeholder="输入一次可连续分析；默认不保存"></div>
+      <div class="save-key-row"><input id="save-ai-key" type="checkbox"><label for="save-ai-key">保存此接口的 API Key<span class="key-security">默认不保存。勾选后使用 Windows 当前用户加密；取消勾选并分析会删除已保存的 Key。</span></label></div>
+      <div><label for="ai-model">模型或接入点 ID</label><input id="ai-model"></div>
+      <div><label for="ai-endpoint">Chat Completions 地址</label><input id="ai-endpoint"></div>
+    </div>
+    <div class="local-box" id="local-settings" hidden>
+      <div class="local-dir">模型目录：<span id="local-model-dir">正在读取…</span></div>
+      <div><label for="local-model-select">当前本地模型</label><select id="local-model-select"><option value="">尚未发现模型</option></select></div>
+      <button class="secondary" id="refresh-local-models" type="button">刷新本地模型</button>
+      <button id="open-model-manager" type="button">下载或导入本地模型</button>
+      <button class="secondary" id="unload-local-model" type="button">关闭模型并释放内存</button>
+      <p class="ai-note">模型默认持续保留在内存中，便于连续分析论文。点击上方按钮可手动释放；关闭整个助手窗口时也会自动停止。</p>
+      <p class="ai-note">释放内存不会删除模型文件或已经生成的 Obsidian 笔记。</p>
+      <p class="ai-note" id="local-runtime-status"></p>
+    </div>
+    <p class="ai-note" id="ai-privacy-note">云端模式会把提取后的论文文字发送给所选服务商，可能产生费用。AI 只填空白字段，不覆盖现有内容。</p>
+    <button class="ai-run" id="ai-run" type="button">分析当前文档并填空</button>
+    <p id="ai-status" role="status" aria-live="polite"></p>
+  </div>
+</section>
+<dialog class="model-dialog" id="model-dialog">
+  <div class="model-manager">
+    <div class="model-manager-head"><h2>本地模型下载与管理</h2><button class="icon-button" id="close-model-manager" type="button">×</button></div>
+    <div class="model-runtime"><strong>Ollama 是什么？</strong><br>Ollama 是在本机下载、管理和运行大语言模型的工具。论文文字会在电脑本地处理，不上传到云端。模型文件通常很大，因此本程序不会固定存放位置，首次使用时请自行选择磁盘和目录。</div>
+    <p>运行本地模型需要安装 Ollama；也可以把 <code>ollama.exe</code> 放进程序的 <code>runtime</code> 文件夹。程序和模型目录可以完全分开。</p>
+    <div class="model-runtime" id="model-runtime-info">正在检测 Ollama 和模型目录…</div>
+    <div class="model-table-wrap"><table class="model-table">
+      <thead><tr><th>模型</th><th>参数量</th><th>下载大小</th><th>最低建议内存</th><th>建议显存</th><th>推荐用途</th><th>操作</th></tr></thead>
+      <tbody>
+        <tr><td>Qwen2.5 1.5B</td><td>15亿</td><td>约 1.0 GB</td><td>8 GB</td><td>可纯 CPU</td><td>提取、翻译、极低配置</td><td><button data-download="qwen2.5:1.5b">下载</button></td></tr>
+        <tr><td>Qwen2.5 3B</td><td>30亿</td><td>约 1.9 GB</td><td>8 GB</td><td>4 GB</td><td>简单摘要、翻译</td><td><button data-download="qwen2.5:3b">下载</button></td></tr>
+        <tr><td>Qwen2.5 7B</td><td>70亿</td><td>约 4.7 GB</td><td>16 GB</td><td>6–8 GB</td><td>论文阅读、总结（入门推荐）</td><td><button data-download="qwen2.5:7b">下载</button></td></tr>
+        <tr><td>Qwen2.5 14B</td><td>140亿</td><td>约 9.0 GB</td><td>24 GB</td><td>10–12 GB</td><td>科研论文分析（推荐）</td><td><button data-download="qwen2.5:14b">下载</button></td></tr>
+        <tr><td>Qwen2.5 32B</td><td>320亿</td><td>约 20 GB</td><td>48 GB</td><td>20–24 GB</td><td>复杂推理、深度分析</td><td><button data-download="qwen2.5:32b">下载</button></td></tr>
+        <tr><td>Llama 3.2 3B</td><td>30亿</td><td>约 2 GB</td><td>8 GB</td><td>4 GB</td><td>轻量通用问答</td><td><button data-download="llama3.2:3b">下载</button></td></tr>
+        <tr><td>Llama 3.1 8B</td><td>80亿</td><td>约 4.9 GB</td><td>16 GB</td><td>8 GB</td><td>通用问答、英文论文</td><td><button data-download="llama3.1:8b">下载</button></td></tr>
+        <tr><td>DeepSeek-R1 1.5B</td><td>15亿</td><td>约 1.1 GB</td><td>8 GB</td><td>可纯 CPU</td><td>低配置推理体验</td><td><button data-download="deepseek-r1:1.5b">下载</button></td></tr>
+        <tr><td>DeepSeek-R1 7B</td><td>70亿</td><td>约 4.7 GB</td><td>16 GB</td><td>6–8 GB</td><td>推理分析</td><td><button data-download="deepseek-r1:7b">下载</button></td></tr>
+        <tr><td>DeepSeek-R1 14B</td><td>140亿</td><td>约 9.0 GB</td><td>24 GB</td><td>10–12 GB</td><td>科研分析</td><td><button data-download="deepseek-r1:14b">下载</button></td></tr>
+        <tr><td>DeepSeek-R1 32B</td><td>320亿</td><td>约 20 GB</td><td>48 GB</td><td>20–24 GB</td><td>高质量推理</td><td><button data-download="deepseek-r1:32b">下载</button></td></tr>
+      </tbody>
+    </table></div>
+    <p class="ai-note">配置为量化模型经验建议；长上下文会额外占用内存。没有独立显卡也能使用 CPU，但 7B 以上通常较慢。</p>
+    <p id="model-job-status"></p>
+    <div class="model-actions"><button id="choose-model-location" type="button">首次使用：选择模型存放目录</button><button id="choose-existing-models" class="secondary" type="button">我已有本地模型：打开 Ollama 目录</button><a href="https://ollama.com/download/windows" target="_blank" rel="noreferrer">下载安装 Ollama</a></div>
+    <p class="ai-note">已有目录需为 Ollama 模型库（含 manifests/blobs）。单独的 GGUF 文件需要先通过 Modelfile 注册，不能直接当作 Ollama 模型库使用。</p>
+  </div>
+</dialog>
+<script>
+  let assistantShutdownRequested = false;
+  let currentLanguage = localStorage.getItem('paperReaderLanguage') === 'en' ? 'en' : 'zh';
+  const staticTranslations = {
+    'paper-reader-assistant':'paper-reader-assistant',
+    '把阅读过程沉淀为结构化的 Obsidian 知识。':'Turn paper reading into structured Obsidian knowledge.',
+    '保存目录：':'Save folder: ', '使用说明':'User Guide', '选择 Obsidian 目录':'Choose Obsidian Folder',
+    '1. 基本信息':'1. Basic Information', '论文题目 *':'Paper Title *', '作者':'Authors', '期刊':'Journal', '年份':'Year', '研究方向':'Research Area', '标签（逗号分隔）':'Tags (comma-separated)',
+    '2. 研究问题':'2. Research Problem', '研究背景':'Research Background', '核心问题':'Core Problem',
+    '3. 方法框架':'3. Methodology', '数据来源':'Data Source', '核心方法':'Core Method', '技术路线':'Technical Route',
+    '4. 创新点':'4. Innovations', '＋ 添加创新点':'＋ Add Innovation', '删除':'Delete',
+    '5. 实验结果':'5. Results', '指标':'Metric', '结果':'Result', '主要结论':'Main Conclusion',
+    '6–8. 评价与启发':'6–8. Evaluation and Insights', '论文不足':'Limitations', '可借鉴方法':'Reusable Methods', '潜在创新方向':'Potential Research Directions', '一句话总结':'One-sentence Summary',
+    '创新性':'Innovation', '工程价值':'Engineering Value', '相关性':'Relevance', '未评价':'Not rated',
+    '生成 Obsidian 笔记':'Generate Obsidian Note', '一键清空':'Clear All',
+    '📖 通用论文阅读重点与时间分配':'📖 General Paper-reading Focus and Time Plan',
+    '第一阶段：快速筛选（10 min）':'Stage 1: Rapid Screening (10 min)', '目标：判断论文是否值得精读。':'Goal: decide whether the paper deserves close reading.',
+    '部分':'Section', '时间':'Time', '重点':'Focus', '标题':'Title', '研究对象、方法':'Research object and method', '摘要':'Abstract', '问题、方法、结果':'Problem, method, and results', '结论':'Conclusion', '贡献、不足':'Contributions and limitations',
+    '第二阶段：寻找创新（30 min）':'Stage 2: Identify Innovations (30 min)', '为什么做？':'Why was it done?', '当前不足？':'What is missing?', '作者解决什么问题？':'What problem do the authors solve?', '输入数据':'Input data', '核心模块':'Core modules',
+    '第三阶段：评价论文（20 min）':'Stage 3: Evaluate the Paper (20 min)', '对比实验':'Comparative experiments', '消融实验':'Ablation studies', '工程验证':'Engineering validation', '局限':'Limitations', '未来方向':'Future directions',
+    '总阅读时间建议':'Suggested Total Reading Time', '论文类型':'Paper type', '普通参考文献':'General reference', '高度相关论文':'Highly relevant paper', '准备复现论文':'Paper to reproduce', '顶刊核心论文':'Core top-journal paper', '5 h 以上':'Over 5 h',
+    '📚 Zotero 文献':'📚 Zotero Library', '📄 读取本地文档':'📄 Read Local Document', '刷新':'Refresh',
+    'AI 论文阅读':'AI Paper Reading', '尚未选择文档。请从本地文档或 Zotero 选择一篇带 PDF 的论文。':'No document selected. Choose a local document or a Zotero item with a PDF.',
+    '云端模型':'Cloud Model', '切换本地模型':'Local Model', 'AI 填空语言':'AI Fill Language', '跟随当前界面（默认）':'Follow Current UI (default)', '接口提供商':'API Provider', 'OpenAI / ChatGPT API（默认）':'OpenAI / ChatGPT API (default)', 'DeepSeek 官方 API':'Official DeepSeek API', '豆包/火山方舟官方 API':'Official Doubao / Volcano Ark API', '自定义 OpenAI 兼容接口':'Custom OpenAI-compatible API',
+    'API Key（当前页面会话）':'API Key (current page session)', '保存此接口的 API Key':'Save the API Key for this provider', '默认不保存。勾选后使用 Windows 当前用户加密；取消勾选并分析会删除已保存的 Key。':'Not saved by default. When checked, Windows encrypts it for the current user. Uncheck and analyze to remove a saved key.',
+    '模型或接入点 ID':'Model or Endpoint ID', 'Chat Completions 地址':'Chat Completions URL',
+    '模型目录：':'Model folder: ', '正在读取…':'Loading…', '当前本地模型':'Current Local Model', '尚未发现模型':'No model found', '刷新本地模型':'Refresh Local Models', '下载或导入本地模型':'Download or Import Local Model', '关闭模型并释放内存':'Unload Model and Free Memory',
+    '模型默认持续保留在内存中，便于连续分析论文。点击上方按钮可手动释放；关闭整个助手窗口时也会自动停止。':'The model stays in memory for consecutive analyses. Use the button above to unload it; closing the assistant also stops it.',
+    '释放内存不会删除模型文件或已经生成的 Obsidian 笔记。':'Unloading memory does not delete model files or generated Obsidian notes.',
+    '云端模式会把提取后的论文文字发送给所选服务商，可能产生费用。AI 只填空白字段，不覆盖现有内容。':'Cloud mode sends extracted paper text to the selected provider and may incur charges. AI fills only blank fields and never overwrites existing content.',
+    '分析当前文档并填空':'Analyze Current Document and Fill Blanks',
+    '本地模型下载与管理':'Local Model Download and Management', 'Ollama 是什么？':'What is Ollama?',
+    'Ollama 是在本机下载、管理和运行大语言模型的工具。论文文字会在电脑本地处理，不上传到云端。模型文件通常很大，因此本程序不会固定存放位置，首次使用时请自行选择磁盘和目录。':'Ollama downloads, manages, and runs language models on your computer. Paper text is processed locally and is not sent to a cloud provider. Model files can be large, so you choose their folder on first use.',
+    '运行本地模型需要安装 Ollama；也可以把 ollama.exe 放进程序的 runtime 文件夹。程序和模型目录可以完全分开。':'Install Ollama to run local models, or place ollama.exe in the runtime folder. The program folder and model folder can remain separate.',
+    '正在检测 Ollama 和模型目录…':'Checking Ollama and the model folder…', '模型':'Model', '参数量':'Parameters', '下载大小':'Download Size', '最低建议内存':'Minimum Suggested RAM', '建议显存':'Suggested VRAM', '推荐用途':'Recommended Use', '操作':'Action', '下载':'Download',
+    '可纯 CPU':'CPU-only supported', '提取、翻译、极低配置':'Extraction and translation on low-end PCs', '简单摘要、翻译':'Basic summarization and translation', '论文阅读、总结（入门推荐）':'Paper reading and summarization (starter pick)', '科研论文分析（推荐）':'Research-paper analysis (recommended)', '复杂推理、深度分析':'Complex reasoning and deep analysis', '轻量通用问答':'Lightweight general Q&A', '通用问答、英文论文':'General Q&A and English papers', '低配置推理体验':'Entry-level reasoning on low-end PCs', '推理分析':'Reasoning analysis', '科研分析':'Research analysis', '高质量推理':'High-quality reasoning',
+    '配置为量化模型经验建议；长上下文会额外占用内存。没有独立显卡也能使用 CPU，但 7B 以上通常较慢。':'These are practical estimates for quantized models. Long context uses extra memory. CPU-only use is possible, but models above 7B are usually slow.',
+    '首次使用：选择模型存放目录':'First Use: Choose Model Folder', '我已有本地模型：打开 Ollama 目录':'Use Existing Models: Open Ollama Folder', '下载安装 Ollama':'Download and Install Ollama',
+    '已有目录需为 Ollama 模型库（含 manifests/blobs）。单独的 GGUF 文件需要先通过 Modelfile 注册，不能直接当作 Ollama 模型库使用。':'An existing folder must be an Ollama model library containing manifests/blobs. Register standalone GGUF files with a Modelfile first.',
+    '中文':'中文', 'Switch to English':'Switch to English'
+  };
+  const placeholderTranslations = {
+    '自行填写；Zotero 无统一的研究方向字段':'Enter manually; Zotero has no standard research-area field',
+    'AI, 数字孪生, 机器人':'AI, digital twin, robotics', '输入数据 → 核心算法 → 结果输出':'Input data → core algorithm → output',
+    '本文针对…问题，提出…方法，实现…目标，但仍存在…不足。':'This paper addresses …, proposes …, achieves …, but remains limited by ….',
+    '搜索题目、作者、标签…':'Search title, author, or tags…', '输入一次可连续分析；默认不保存':'Enter once for repeated analysis; not saved by default'
+  };
+  const textSources = new WeakMap(), attributeSources = new WeakMap();
+  function tr(zh, en='') { return currentLanguage === 'en' ? (en || staticTranslations[zh] || zh) : zh; }
+  function translateTree(root=document.body) {
+    const walker=document.createTreeWalker(root,NodeFilter.SHOW_TEXT);
+    let node;
+    while((node=walker.nextNode())) {
+      if (!node.parentElement || ['SCRIPT','STYLE'].includes(node.parentElement.tagName)) continue;
+      if (!textSources.has(node)) textSources.set(node,node.nodeValue);
+      const source=textSources.get(node), trimmed=source.trim();
+      if (!trimmed || !staticTranslations[trimmed]) { if(currentLanguage==='zh') node.nodeValue=source; continue; }
+      const leading=source.match(/^\s*/)[0], trailing=source.match(/\s*$/)[0];
+      node.nodeValue=leading+(currentLanguage==='en'?staticTranslations[trimmed]:trimmed)+trailing;
+    }
+    root.querySelectorAll('[placeholder],[title],[aria-label]').forEach(element=>{
+      if(!attributeSources.has(element)) attributeSources.set(element,{});
+      const saved=attributeSources.get(element);
+      ['placeholder','title','aria-label'].forEach(attr=>{
+        if(!element.hasAttribute(attr)) return;
+        if(!(attr in saved)) saved[attr]=element.getAttribute(attr);
+        const source=saved[attr];
+        element.setAttribute(attr,currentLanguage==='en'?(placeholderTranslations[source]||staticTranslations[source]||source):source);
+      });
+    });
+  }
+  function applyLanguage(language, persist=true) {
+    currentLanguage=language==='en'?'en':'zh';
+    if(persist) localStorage.setItem('paperReaderLanguage',currentLanguage);
+    document.documentElement.lang=currentLanguage==='en'?'en':'zh-CN';
+    translateTree();
+    const control=document.querySelector('#language-switch');
+    control.classList.toggle('night',currentLanguage==='en');
+    control.querySelector('.switch-label').textContent=currentLanguage==='en'?'English':'中文';
+    const hint=document.querySelector('.language-hint');
+    hint.textContent=currentLanguage==='en'?'切换到中文':'Switch to English';
+    control.title=hint.textContent; control.setAttribute('aria-label',hint.textContent);
+    document.querySelector('.guide-link').href=`/guide?lang=${currentLanguage}`;
+    setAiMode(typeof aiMode==='undefined'?'cloud':aiMode);
+    renderZotero(zoteroItems);
+    renumberInnovations();
+  }
+  document.querySelector('#language-switch').addEventListener('click',()=>applyLanguage(currentLanguage==='zh'?'en':'zh'));
+  window.addEventListener('beforeunload', event => {
+    if (assistantShutdownRequested) return;
+    event.preventDefault();
+    event.returnValue = '';
+  });
+  window.addEventListener('pagehide', () => {
+    if (assistantShutdownRequested) return;
+    assistantShutdownRequested = true;
+    navigator.sendBeacon('/api/shutdown', new Blob(['close'], {type:'text/plain'}));
+  });
+
+  const form = document.querySelector('#paper-form');
+  const statusBox = document.querySelector('#status');
+  const outputDir = document.querySelector('#output-dir');
+  const zoteroList = document.querySelector('#zotero-list');
+  const zoteroStatus = document.querySelector('#zotero-status');
+  const zoteroSearch = document.querySelector('#zotero-search');
+  let zoteroItems = [];
+  let currentDocumentPath = '';
+
+  function updateCurrentDocument(path) {
+    currentDocumentPath = path || '';
+    document.querySelector('#ai-file').textContent = currentDocumentPath || tr('尚未选择文档。请从本地文档或 Zotero 选择一篇带 PDF 的论文。');
+  }
+
+  const innovationList = document.querySelector('#innovation-list');
+  function addInnovation(value='') {
+    const row = document.createElement('div');
+    row.className = 'innovation-row';
+    row.innerHTML = `<div><label>Innovation <span></span></label><textarea class="innovation-value"></textarea></div><button class="danger remove-innovation" type="button">${tr('删除')}</button>`;
+    row.querySelector('textarea').value = value;
+    row.querySelector('.remove-innovation').addEventListener('click', () => {
+      if (innovationList.children.length <= 1) { row.querySelector('textarea').value=''; return; }
+      row.remove(); renumberInnovations();
+    });
+    innovationList.appendChild(row);
+    renumberInnovations();
+    return row.querySelector('textarea');
+  }
+  function renumberInnovations() {
+    [...innovationList.children].forEach((row,index) => {
+      row.querySelector('label').childNodes[0].nodeValue=(currentLanguage==='en'?'Innovation ':'创新点 ');
+      row.querySelector('label span').textContent=index+1;
+      row.querySelector('.remove-innovation').textContent=tr('删除');
+    });
+  }
+  function resetInnovations() {
+    innovationList.innerHTML=''; addInnovation(); addInnovation();
+  }
+  document.querySelector('#add-innovation').addEventListener('click', () => addInnovation().focus());
+  resetInnovations();
+
+  function setField(name, value) {
+    const field = form.elements.namedItem(name);
+    if (field) field.value = value || '';
+  }
+
+  function escapeHtml(value) {
+    return String(value || '').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
+  }
+
+  function renderZotero(items) {
+    const keyword = zoteroSearch.value.trim().toLowerCase();
+    const filtered = items.filter(item => [item.title,item.author,item.journal,item.year,...item.tags,...item.collections].join(' ').toLowerCase().includes(keyword));
+    zoteroStatus.textContent = currentLanguage==='en' ? `${items.length} papers; showing ${filtered.length}` : `共 ${items.length} 篇，当前显示 ${filtered.length} 篇`;
+    zoteroList.innerHTML = filtered.map(item => `
+      <button class="zotero-item" type="button" data-key="${escapeHtml(item.key)}">
+        <div class="zotero-title">${escapeHtml(item.title)}</div>
+        <div class="zotero-meta">${escapeHtml([item.author,item.journal,item.year].filter(Boolean).join(' · '))}</div>
+        ${item.collections.length ? `<div class="zotero-collection">📁 ${escapeHtml(item.collections.join(' / '))}</div>` : ''}
+      </button>`).join('') || `<p class="zotero-meta">${tr('没有匹配的文献。','No matching papers.')}</p>`;
+  }
+
+  async function loadZotero() {
+    zoteroStatus.textContent = tr('正在读取 Zotero…','Loading Zotero…');
+    try {
+      const response = await fetch('/api/zotero/items');
+      const result = await response.json();
+      if (!response.ok || !result.ok) throw new Error(result.message || tr('读取失败','Failed to load'));
+      zoteroItems = result.items;
+      renderZotero(zoteroItems);
+    } catch (error) {
+      zoteroStatus.textContent = error.message;
+      zoteroList.innerHTML = '';
+    }
+  }
+
+  zoteroList.addEventListener('click', async event => {
+    const button = event.target.closest('.zotero-item');
+    if (!button) return;
+    const item = zoteroItems.find(entry => entry.key === button.dataset.key);
+    if (!item) return;
+    setField('title', item.title);
+    setField('author', item.author);
+    setField('journal', item.journal);
+    setField('year', item.year);
+    setField('tags', item.tags.join(', '));
+    updateCurrentDocument(item.source_file);
+    statusBox.className = 'ok';
+    statusBox.textContent = item.source_file ? (currentLanguage==='en'?`Imported Zotero paper: ${item.title}`:`已导入 Zotero 文献：${item.title}`) : tr('已导入基础信息；此条目没有检测到本地 PDF。','Basic information imported; no local PDF was detected for this item.');
+    form.scrollIntoView({behavior:'smooth', block:'start'});
+    fetch('/api/zotero/open', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({key:item.key})});
+  });
+
+  document.querySelector('#local-document').addEventListener('click', async event => {
+    const button = event.currentTarget;
+    button.disabled = true;
+    button.textContent = tr('正在读取…','Loading…');
+    try {
+      const response = await fetch('/api/local-document', {method:'POST'});
+      const result = await response.json();
+      if (!result.ok) {
+        statusBox.className = '';
+        statusBox.textContent = result.message;
+        return;
+      }
+      const data = result.metadata;
+      ['title','author','journal','year','research_area'].forEach(name => {
+        if (data[name]) setField(name, data[name]);
+      });
+      if (data.tags?.length) setField('tags', data.tags.join(', '));
+      updateCurrentDocument(data.source_file);
+      statusBox.className = 'ok';
+      statusBox.textContent = currentLanguage==='en'?`Local document loaded: ${data.source_file}`:`已读取本地文档：${data.source_file}`;
+      form.scrollIntoView({behavior:'smooth', block:'start'});
+    } catch (error) {
+      statusBox.className = 'error'; statusBox.textContent = error.message;
+    } finally {
+      button.disabled = false;
+      button.textContent = tr('📄 读取本地文档');
+    }
+  });
+
+  document.querySelector('#choose-dir').addEventListener('click', async () => {
+    const button = document.querySelector('#choose-dir');
+    button.disabled = true;
+    try {
+      const response = await fetch('/api/choose-directory', {method:'POST'});
+      const result = await response.json();
+      outputDir.textContent = result.output_dir;
+      statusBox.className = result.ok ? 'ok' : '';
+      statusBox.textContent = result.ok ? tr('新目录已设为默认保存位置。','The new folder is now the default save location.') : result.message;
+    } catch (error) {
+      statusBox.className = 'error'; statusBox.textContent = error.message;
+    } finally { button.disabled = false; }
+  });
+
+  document.querySelector('#clear-form').addEventListener('click', () => {
+    if (!confirm(tr('确定清空当前填写的全部内容吗？','Clear all content in the current form?'))) return;
+    form.reset();
+    resetInnovations();
+    updateCurrentDocument('');
+    statusBox.className = '';
+    statusBox.textContent = tr('表单已清空，可以继续填写下一篇论文。','The form has been cleared and is ready for the next paper.');
+    document.querySelector('#title').focus();
+  });
+
+  function setSidebarCollapsed(collapsed) {
+    const workspace = document.querySelector('#workspace');
+    workspace.classList.toggle('sidebar-collapsed', collapsed);
+    const toggle = document.querySelector('#toggle-zotero');
+    toggle.textContent = collapsed ? '‹' : '›';
+    toggle.title = collapsed ? tr('展开文献栏','Expand Zotero panel') : tr('收起文献栏','Collapse Zotero panel');
+  }
+  document.querySelector('#toggle-zotero').addEventListener('click', () => {
+    setSidebarCollapsed(true);
+  });
+  const fab = document.querySelector('#zotero-fab');
+  let drag = null;
+  fab.addEventListener('pointerdown', event => {
+    drag = {x:event.clientX, y:event.clientY, left:fab.offsetLeft, top:fab.offsetTop, moved:false};
+    fab.setPointerCapture(event.pointerId);
+  });
+  fab.addEventListener('pointermove', event => {
+    if (!drag) return;
+    const dx=event.clientX-drag.x, dy=event.clientY-drag.y;
+    if (Math.abs(dx)+Math.abs(dy)>5) drag.moved=true;
+    const left=Math.max(6,Math.min(window.innerWidth-fab.offsetWidth-6,drag.left+dx));
+    const top=Math.max(6,Math.min(window.innerHeight-fab.offsetHeight-6,drag.top+dy));
+    fab.style.left=`${left}px`; fab.style.top=`${top}px`; fab.style.right='auto';
+  });
+  fab.addEventListener('pointerup', event => {
+    if (!drag) return;
+    const moved=drag.moved;
+    if (moved) {
+      const snapLeft=fab.offsetLeft+fab.offsetWidth/2 < window.innerWidth/2;
+      fab.style.left=snapLeft?'8px':`${window.innerWidth-fab.offsetWidth-8}px`;
+      localStorage.setItem('zoteroFab',JSON.stringify({left:fab.style.left,top:fab.style.top}));
+    }
+    drag=null; fab.releasePointerCapture(event.pointerId);
+    if (!moved) setSidebarCollapsed(false);
+  });
+  window.addEventListener('resize', () => {
+    const left=Math.max(6,Math.min(window.innerWidth-fab.offsetWidth-6,fab.offsetLeft));
+    const top=Math.max(6,Math.min(window.innerHeight-fab.offsetHeight-6,fab.offsetTop));
+    fab.style.left=`${left}px`; fab.style.top=`${top}px`; fab.style.right='auto';
+    if (window.innerWidth<=950) setSidebarCollapsed(true);
+  });
+  try {
+    const saved=JSON.parse(localStorage.getItem('zoteroFab'));
+    if (saved) { fab.style.left=saved.left; fab.style.top=saved.top; fab.style.right='auto'; }
+  } catch (_) {}
+  document.querySelector('#refresh-zotero').addEventListener('click', loadZotero);
+  zoteroSearch.addEventListener('input', () => renderZotero(zoteroItems));
+
+  const aiDefaults = {
+    openai:{model:'chat-latest',endpoint:'https://api.openai.com/v1/chat/completions'},
+    deepseek:{model:'deepseek-v4-flash',endpoint:'https://api.deepseek.com/chat/completions'},
+    doubao:{model:'doubao-seed-2-0-lite-260215',endpoint:'https://ark.cn-beijing.volces.com/api/v3/chat/completions'},
+    custom:{model:'',endpoint:''}
+  };
+  async function loadSavedApiKey() {
+    const provider=document.querySelector('#ai-provider').value;
+    const keyInput=document.querySelector('#ai-key'), saveBox=document.querySelector('#save-ai-key');
+    keyInput.value=''; saveBox.checked=false;
+    try {
+      const result=await (await fetch(`/api/ai-key?provider=${encodeURIComponent(provider)}`)).json();
+      if(result.ok && result.saved) { keyInput.value=result.api_key||''; saveBox.checked=true; }
+    } catch (_) {}
+  }
+  async function setAiProviderDefaults() {
+    const provider=document.querySelector('#ai-provider').value;
+    document.querySelector('#ai-model').value=aiDefaults[provider].model;
+    document.querySelector('#ai-endpoint').value=aiDefaults[provider].endpoint;
+    await loadSavedApiKey();
+  }
+  document.querySelector('#ai-provider').addEventListener('change',setAiProviderDefaults);
+  setAiProviderDefaults();
+  let aiMode='cloud';
+  function setAiMode(mode) {
+    aiMode=mode;
+    document.querySelector('#cloud-settings').hidden=mode!=='cloud';
+    document.querySelector('#local-settings').hidden=mode!=='local';
+    document.querySelector('#cloud-mode').classList.toggle('active',mode==='cloud');
+    document.querySelector('#local-mode').classList.toggle('active',mode==='local');
+    document.querySelector('#ai-privacy-note').textContent=mode==='local'
+      ? tr('本地模式不会把论文发送到云端；处理速度取决于电脑配置。AI 只填空白字段。','Local mode does not send papers to the cloud; speed depends on your hardware. AI fills only blank fields.')
+      : tr('云端模式会把提取后的论文文字发送给所选服务商，可能产生费用。AI 只填空白字段，不覆盖现有内容。');
+    if (mode==='local') refreshLocalModels();
+  }
+  document.querySelector('#cloud-mode').addEventListener('click',()=>setAiMode('cloud'));
+  document.querySelector('#local-mode').addEventListener('click',()=>setAiMode('local'));
+
+  async function refreshLocalModels() {
+    const runtimeStatus=document.querySelector('#local-runtime-status');
+    try {
+      const result=await (await fetch('/api/local-models')).json();
+      document.querySelector('#local-model-dir').textContent=result.model_dir||tr('尚未选择','Not selected');
+      runtimeStatus.textContent=!result.model_dir?tr('请先进入模型管理，选择模型存放目录。','Open Model Management and choose a model folder first.'):(result.runtime_found ? (result.running?tr('Ollama 正在运行。','Ollama is running.'):tr('已找到 Ollama，服务尚未启动。','Ollama was found; the service is not running.')) : tr('未找到 Ollama，请先安装或放入 runtime 文件夹。','Ollama was not found. Install it or place it in the runtime folder.'));
+      const select=document.querySelector('#local-model-select');
+      const models=result.models||[];
+      select.innerHTML=models.length?models.map(name=>`<option value="${escapeHtml(name)}">${escapeHtml(name)}</option>`).join(''):`<option value="">${tr('尚未发现模型')}</option>`;
+      if (result.selected_model && models.includes(result.selected_model)) select.value=result.selected_model;
+      document.querySelector('#model-runtime-info').textContent=currentLanguage==='en'
+        ? `Runtime: ${result.runtime_found?'found':'not found'} | Service: ${result.running?'running':'stopped'} | Model folder: ${result.model_dir||'not selected'}`
+        : `运行时：${result.runtime_found?'已找到':'未找到'} ｜ 服务：${result.running?'运行中':'未运行'} ｜ 模型目录：${result.model_dir||'尚未选择'}`;
+    } catch(error) { runtimeStatus.textContent=error.message; }
+  }
+  document.querySelector('#refresh-local-models').addEventListener('click',refreshLocalModels);
+  document.querySelector('#local-model-select').addEventListener('change',async event=>{
+    if (!event.target.value) return;
+    await fetch('/api/select-local-model',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:event.target.value})});
+  });
+  document.querySelector('#unload-local-model').addEventListener('click',async()=>{
+    const model=document.querySelector('#local-model-select').value;
+    const runtimeStatus=document.querySelector('#local-runtime-status');
+    if (!model) { runtimeStatus.textContent=tr('当前没有选择本地模型。','No local model is selected.'); return; }
+    const result=await (await fetch('/api/unload-local-model',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model})})).json();
+    runtimeStatus.textContent=result.message||'';
+  });
+  document.querySelector('#close-app').addEventListener('click',async()=>{
+    if (!confirm(tr('确定关闭本地模型、Python 后台和paper-reader-assistant页面吗？模型文件与笔记不会删除。','Close the local model, Python backend, and paper-reader-assistant page? Model files and notes will not be deleted.'))) return;
+    assistantShutdownRequested=true;
+    const closeButton=document.querySelector('#close-app');
+    closeButton.disabled=true;
+    try {
+      await fetch('/api/shutdown',{method:'POST',keepalive:true});
+    } catch (_) {}
+    document.title=tr('paper-reader-assistant已关闭','paper-reader-assistant Closed');
+    document.body.innerHTML=currentLanguage==='en'
+      ? '<main style="max-width:620px;margin:18vh auto;padding:32px;text-align:center;font-family:system-ui,sans-serif"><h1>paper-reader-assistant Closed</h1><p>The local model and Python backend have stopped. Model files and notes were preserved.</p><p>If the browser did not close this page automatically, it is now safe to close it.</p></main>'
+      : '<main style="max-width:620px;margin:18vh auto;padding:32px;text-align:center;font-family:system-ui,Microsoft YaHei,sans-serif"><h1>paper-reader-assistant已关闭</h1><p>本地模型和 Python 后台已停止，模型文件与笔记均已保留。</p><p>如果浏览器没有自动关闭此页，现在可以安全关闭。</p></main>';
+    setTimeout(()=>window.close(),100);
+  });
+  const modelDialog=document.querySelector('#model-dialog');
+  document.querySelector('#open-model-manager').addEventListener('click',async()=>{ modelDialog.showModal(); await refreshLocalModels(); });
+  document.querySelector('#close-model-manager').addEventListener('click',()=>modelDialog.close());
+  async function chooseModelDirectory() {
+    const status=document.querySelector('#model-job-status'); status.textContent=tr('正在选择并检测目录…','Selecting and checking the folder…');
+    const result=await (await fetch('/api/choose-model-directory',{method:'POST'})).json();
+    status.textContent=result.message||'';
+    if (result.ok) {
+      await refreshLocalModels();
+      if (result.models?.length) { modelDialog.close(); setAiMode('local'); document.querySelector('#ai-panel').classList.add('open'); }
+      else { status.textContent=`${result.message||''} ${tr('当前目录还没有可用模型，请从上表选择下载。','No usable model exists in this folder. Choose one from the table to download.')}`; }
+    }
+  }
+  document.querySelector('#choose-model-location').addEventListener('click',chooseModelDirectory);
+  document.querySelector('#choose-existing-models').addEventListener('click',chooseModelDirectory);
+  async function watchModelJob(model) {
+    const status=document.querySelector('#model-job-status');
+    for (;;) {
+      await new Promise(resolve=>setTimeout(resolve,2000));
+      const job=await (await fetch(`/api/model-job?model=${encodeURIComponent(model)}`)).json();
+      status.textContent=job.message||'';
+      if (job.status==='complete') { await refreshLocalModels(); setAiMode('local'); modelDialog.close(); document.querySelector('#ai-panel').classList.add('open'); document.querySelector('#ai-status').textContent=tr('本地模型已就绪，请选择论文后开始分析。','The local model is ready. Select a paper and start analysis.'); return; }
+      if (job.status==='error') return;
+    }
+  }
+  document.querySelector('#model-dialog').addEventListener('click',async event=>{
+    const button=event.target.closest('[data-download]');
+    if (!button) return;
+    const model=button.dataset.download;
+    if (!confirm(currentLanguage==='en'?`Downloading ${model} may use several GB and take a long time. Continue?`:`下载 ${model} 可能占用数 GB 空间并耗时较长，确定继续吗？`)) return;
+    button.disabled=true;
+    const result=await (await fetch('/api/download-model',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model})})).json();
+    document.querySelector('#model-job-status').textContent=result.message||'';
+    button.disabled=false;
+    if (result.ok) watchModelJob(model);
+  });
+  const aiFab=document.querySelector('#ai-fab');
+  const aiPanel=document.querySelector('#ai-panel');
+  const aiHead=document.querySelector('.ai-head');
+  function clampFloating(element, margin=8) {
+    if (!element || element.getClientRects().length===0) return;
+    const rect=element.getBoundingClientRect();
+    const maxLeft=Math.max(margin,window.innerWidth-rect.width-margin);
+    const maxTop=Math.max(margin,window.innerHeight-rect.height-margin);
+    const left=Math.max(margin,Math.min(maxLeft,rect.left));
+    const top=Math.max(margin,Math.min(maxTop,rect.top));
+    element.style.left=`${left}px`; element.style.top=`${top}px`;
+    element.style.right='auto'; element.style.bottom='auto';
+  }
+  function saveAiPosition(key,element) {
+    const rect=element.getBoundingClientRect();
+    localStorage.setItem(key,JSON.stringify({left:Math.round(rect.left),top:Math.round(rect.top)}));
+  }
+  function restoreAiPosition(key,element) {
+    try {
+      const saved=JSON.parse(localStorage.getItem(key));
+      if(saved && Number.isFinite(saved.left) && Number.isFinite(saved.top)) {
+        element.style.left=`${saved.left}px`; element.style.top=`${saved.top}px`;
+        element.style.right='auto'; element.style.bottom='auto';
+      }
+    } catch (_) {}
+  }
+  restoreAiPosition('aiFabPosition',aiFab);
+  restoreAiPosition('aiPanelPosition',aiPanel);
+
+  let aiFabDrag=null;
+  aiFab.addEventListener('pointerdown',event=>{
+    const rect=aiFab.getBoundingClientRect();
+    aiFabDrag={x:event.clientX,y:event.clientY,left:rect.left,top:rect.top,moved:false};
+    aiFab.setPointerCapture(event.pointerId); event.preventDefault();
+  });
+  aiFab.addEventListener('pointermove',event=>{
+    if(!aiFabDrag) return;
+    const dx=event.clientX-aiFabDrag.x,dy=event.clientY-aiFabDrag.y;
+    if(Math.abs(dx)+Math.abs(dy)>5) aiFabDrag.moved=true;
+    const left=Math.max(6,Math.min(window.innerWidth-aiFab.offsetWidth-6,aiFabDrag.left+dx));
+    const top=Math.max(6,Math.min(window.innerHeight-aiFab.offsetHeight-6,aiFabDrag.top+dy));
+    aiFab.style.left=`${left}px`;aiFab.style.top=`${top}px`;aiFab.style.right='auto';aiFab.style.bottom='auto';
+  });
+  aiFab.addEventListener('pointerup',event=>{
+    if(!aiFabDrag) return;
+    const moved=aiFabDrag.moved;aiFabDrag=null;aiFab.releasePointerCapture(event.pointerId);
+    if(moved){
+      const snapLeft=aiFab.offsetLeft+aiFab.offsetWidth/2<window.innerWidth/2;
+      aiFab.style.left=snapLeft?'8px':`${window.innerWidth-aiFab.offsetWidth-8}px`;
+      saveAiPosition('aiFabPosition',aiFab);
+    } else {
+      aiPanel.classList.toggle('open');
+    }
+  });
+  aiFab.addEventListener('pointercancel',()=>{aiFabDrag=null;});
+
+  let aiPanelDrag=null;
+  aiHead.addEventListener('pointerdown',event=>{
+    if(event.target.closest('button')) return;
+    const rect=aiPanel.getBoundingClientRect();
+    aiPanelDrag={x:event.clientX,y:event.clientY,left:rect.left,top:rect.top};
+    aiPanel.style.left=`${rect.left}px`;aiPanel.style.top=`${rect.top}px`;aiPanel.style.right='auto';aiPanel.style.bottom='auto';
+    aiHead.setPointerCapture(event.pointerId);event.preventDefault();
+  });
+  aiHead.addEventListener('pointermove',event=>{
+    if(!aiPanelDrag) return;
+    const width=aiPanel.offsetWidth,height=aiPanel.offsetHeight;
+    const left=Math.max(8,Math.min(window.innerWidth-width-8,aiPanelDrag.left+event.clientX-aiPanelDrag.x));
+    const top=Math.max(8,Math.min(window.innerHeight-height-8,aiPanelDrag.top+event.clientY-aiPanelDrag.y));
+    aiPanel.style.left=`${left}px`;aiPanel.style.top=`${top}px`;
+  });
+  aiHead.addEventListener('pointerup',event=>{
+    if(!aiPanelDrag) return;
+    aiPanelDrag=null;aiHead.releasePointerCapture(event.pointerId);clampFloating(aiPanel);saveAiPosition('aiPanelPosition',aiPanel);
+  });
+  aiHead.addEventListener('pointercancel',()=>{aiPanelDrag=null;});
+  document.querySelector('#close-ai').addEventListener('click',()=>aiPanel.classList.remove('open'));
+  new MutationObserver(()=>{
+    if(aiPanel.classList.contains('open')) requestAnimationFrame(()=>clampFloating(aiPanel));
+  }).observe(aiPanel,{attributes:true,attributeFilter:['class']});
+  if('ResizeObserver' in window) new ResizeObserver(()=>{
+    if(aiPanel.classList.contains('open') && !aiPanelDrag) requestAnimationFrame(()=>clampFloating(aiPanel));
+  }).observe(aiPanel);
+  function keepFloatingWindowsVisible(){
+    clampFloating(aiFab,6);
+    if(aiPanel.classList.contains('open')) clampFloating(aiPanel,8);
+  }
+  window.addEventListener('resize',keepFloatingWindowsVisible);
+  if(window.visualViewport) window.visualViewport.addEventListener('resize',keepFloatingWindowsVisible);
+  document.querySelector('#ai-run').addEventListener('click',async event=>{
+    const button=event.currentTarget, aiStatus=document.querySelector('#ai-status');
+    if (!currentDocumentPath) { aiStatus.textContent=tr('请先读取本地文档，或选择一篇已下载 PDF 的 Zotero 文献。','Read a local document or select a Zotero paper with a downloaded PDF first.'); return; }
+    button.disabled=true; button.textContent=tr('AI 正在阅读…','AI is reading…'); aiStatus.textContent=tr('正在提取正文并请求模型，请勿关闭程序。','Extracting text and requesting the model. Do not close the program.');
+    try {
+      const local=aiMode==='local';
+      const localModel=document.querySelector('#local-model-select').value;
+      if (local && !localModel) throw new Error(tr('请先下载或选择一个本地模型。','Download or select a local model first.'));
+      const selectedOutputLanguage=document.querySelector('#ai-output-language').value;
+      const outputLanguage=selectedOutputLanguage==='auto'?currentLanguage:selectedOutputLanguage;
+      const payload={source_file:currentDocumentPath,provider:local?'ollama':document.querySelector('#ai-provider').value,api_key:local?'':document.querySelector('#ai-key').value,save_api_key:local?false:document.querySelector('#save-ai-key').checked,model:local?localModel:document.querySelector('#ai-model').value,endpoint:local?'http://127.0.0.1:11436/v1/chat/completions':document.querySelector('#ai-endpoint').value,unload_after:false,output_language:outputLanguage,research_context:[form.elements.namedItem('research_area').value,form.elements.namedItem('tags').value].filter(Boolean).join(outputLanguage==='en'?'; ':'；')};
+      const response=await fetch('/api/ai/analyze',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+      const result=await response.json();
+      if (!response.ok || !result.ok) throw new Error(result.message||tr('AI 分析失败','AI analysis failed'));
+      const fields=result.fields;
+      ['research_area','background','core_problem','data_source','technical_route','core_method','metric','metric_result','conclusion','limitation','useful_method','future_direction','one_sentence'].forEach(name=>{
+        const input=form.elements.namedItem(name);
+        if (input && !input.value.trim() && fields[name]) input.value=fields[name];
+      });
+      const tags=form.elements.namedItem('tags');
+      if (tags && !tags.value.trim() && Array.isArray(fields.tags)) tags.value=fields.tags.filter(Boolean).join(', ');
+      if (Array.isArray(fields.innovations)) {
+        fields.innovations.filter(Boolean).forEach(value=>{
+          let target=[...document.querySelectorAll('.innovation-value')].find(area=>!area.value.trim());
+          if (!target) target=addInnovation();
+          target.value=value;
+        });
+      }
+      const validRatings=['★☆☆☆☆','★★☆☆☆','★★★☆☆','★★★★☆','★★★★★'];
+      ['innovation_rating','engineering_rating','relevance_rating'].forEach(name=>{
+        const select=form.elements.namedItem(name), value=fields[name];
+        if (select && !select.value && validRatings.includes(value)) select.value=value;
+      });
+      aiStatus.textContent=tr('分析完成：已填入空白字段，原有内容保持不变。','Analysis complete: blank fields were filled and existing content was preserved.');
+      statusBox.className='ok'; statusBox.textContent=tr('AI 阅读结果已填入空白位置，请人工核对后再保存。','AI results were added to blank fields. Review them before saving.');
+    } catch(error) { aiStatus.textContent=error.message; }
+    finally { button.disabled=false; button.textContent=tr('分析当前文档并填空'); }
+  });
+
+  form.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const button = form.querySelector('button[type="submit"]');
+    button.disabled = true; statusBox.className = ''; statusBox.textContent = tr('正在生成…','Generating…');
+    try {
+      const data = Object.fromEntries(new FormData(form).entries());
+      data.innovations=[...document.querySelectorAll('.innovation-value')].map(area=>area.value.trim()).filter(Boolean);
+      const response = await fetch('/api/notes', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data)});
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.message || tr('生成失败','Generation failed'));
+      statusBox.className = 'ok'; statusBox.textContent = `${result.message} ${result.path}`;
+    } catch (error) {
+      statusBox.className = 'error'; statusBox.textContent = error.message;
+    } finally { button.disabled = false; }
+  });
+
+  applyLanguage(currentLanguage,false);
+  if (window.innerWidth<=950) setSidebarCollapsed(true);
+  loadZotero();
+</script>
+<script src="streaming.js"></script>
+</body>
+</html>
