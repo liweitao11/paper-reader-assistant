@@ -69,7 +69,7 @@ paper-reader-assistant 是一个面向科研阅读场景的本地PaperFlow。它
 
 ### 方式一：下载 Release 压缩包（推荐）
 `
-> 最新版：（发布包：`paper-reader-assistant-v1.0.zip`）（https://github.com/liweitao11/paper-reader-assistant/releases/tag/v1.0.0）
+> 最新版：（发布包：`paper-reader-assistant-v1.0.zip`）[下载](https://github.com/liweitao11/paper-reader-assistant/releases)
 
 下载后解压，双击 `PaperReader.cmd` 即可启动。首次使用可选择 Ollama 模型目录；`runtime/` 目录可放置 Windows 版 `ollama.exe`，也可直接安装 Ollama。
 
